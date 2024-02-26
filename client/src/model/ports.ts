@@ -1,9 +1,7 @@
-import { useRouter } from 'vue-router'
 import { ref, computed, onUnmounted } from 'vue'
 import * as myFetch from './myFetch'
 import { toast } from './toast'
 import { type Job } from './jobs'
-import { socket } from './myFetch'
 
 export function api(action: string, body?: unknown, method?: string, headers?: any) {
   headers = headers ?? {}
@@ -20,7 +18,10 @@ export interface Device {
   id?: number 
   error?: string
   queue?: Job[] //  Store job array to store queue for each printer. 
+  isExpanded?: boolean
 }
+
+export let printers = ref<Array<Device>>([]);
 
 export function useGetPorts() {
   return {
@@ -152,55 +153,4 @@ export function useQueueRestore(){
     }
   }
 
-}
-
-// function to set up the socket for status updates
-export function setupStatusSocket(printers: any) {
-  socket.on("status_update", ((data: any) => {    
-    if (printers && printers.value) {
-      const printer = printers.value.find((p: Device) => p.id === data.printer_id)
-      if (printer) {
-        printer.status = data.status;
-      }
-    } else {
-      console.error('printers or printers.value is undefined');
-    }
-  }))
-}
-
-export function setupQueueSocket(printers: any) {
-  socket.on("queue_update", ((data: any) => {
-    if (printers && printers.value) {
-      const printer = printers.value.find((p: Device) => p.id === data.printerid)
-      console.log(printer)
-      if (printer) {
-        printer.queue = data.queue;
-      }
-    } else {
-      console.error('printers or printers.value is undefined');
-    }
-  }
-  ))
-  console.log('queue socket set up')
-}
-
-export function setupErrorSocket(printers: any){
-  socket.on("error_update", ((data: any) => {
-    if (printers && printers.value) {
-      const printer = printers.value.find((p: Device) => p.id === data.printerid)
-      console.log(printer)
-      if (printer) {
-        printer.error = data.error;
-      }
-    } else {
-      console.error('printers or printers.value is undefined');
-    }
-  }
-  ))
-  console.log('queue socket set up')
-}
-
-// function needs to disconnect the socket when the component is unmounted
-export function disconnectStatusSocket() {
-  socket.disconnect()
 }

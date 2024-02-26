@@ -12,7 +12,7 @@ const routes = [
     component: MainView
   },
   {
-    path: '/queue/:printerName?',
+    path: '/queue',
     name: 'QueueViewVue',
     component: QueueViewVue
   },

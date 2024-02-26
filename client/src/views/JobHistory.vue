@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { useRetrievePrintersInfo, type Device } from '../model/ports'
+import { printers, type Device } from '../model/ports'
 import { useGetJobs, type Job, useRerunJob, useGetJobFile } from '@/model/jobs';
-import { computed, onMounted, ref, watch } from 'vue';
-// import { useGetJobs, type Job } from '@/model/jobs';
-// import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+
 const { jobhistory } = useGetJobs()
-const { retrieveInfo } = useRetrievePrintersInfo()
 const { rerunJob } = useRerunJob()
 const { getFile } = useGetJobFile()
 
-const printers = ref<Array<Device>>([]) // Get list of open printer threads 
 const selectedPrinters = ref<Array<Device>>([])
 let jobs = ref<Array<Job>>([])
 let filter = ref('') // This will hold the current filter value
@@ -43,8 +40,6 @@ onMounted(async () => {
         // Ensure that totalPages is at least 1
         totalPages.value = Math.max(totalPages.value, 1);
 
-        const printerInfo = await retrieveInfo()
-        printers.value = printerInfo
     } catch (error) {
         console.error(error)
     }

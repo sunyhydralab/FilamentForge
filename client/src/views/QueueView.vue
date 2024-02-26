@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRetrievePrintersInfo, setupQueueSocket, setupStatusSocket, type Device } from '../model/ports'
+import { ref, onUnmounted } from 'vue'
+import { useRetrievePrintersInfo, type Device, printers } from '../model/ports'
 import { useRerunJob, useRemoveJob, bumpJobs, type Job } from '../model/jobs';
-import { useRoute } from 'vue-router'
 import { nextTick } from 'vue';
 
 const { retrieveInfo } = useRetrievePrintersInfo()
@@ -11,23 +10,9 @@ const { rerunJob } = useRerunJob()
 const { bumpjob } = bumpJobs()
 
 const modalJob = ref<Job>();
-const modalPrinter = ref<Printer>();
-
-type Printer = Device & { isExpanded?: boolean }
-const printers = ref<Array<Printer>>([]) // Get list of open printer threads 
+const modalPrinter = ref<Device>();
 
 let intervalId: number | undefined;
-
-onMounted(async () => {
-  try {
-    const printerInfo = await retrieveInfo()
-    printers.value = printerInfo 
-    setupQueueSocket(printers)
-    setupStatusSocket(printers)
-  } catch (error) {
-    console.error('There has been a problem with your fetch operation:', error)
-  }
-})
 
 onUnmounted(() => {
   // Clear the interval when the component is unmounted to prevent memory leaks
@@ -36,7 +21,7 @@ onUnmounted(() => {
   }
 })
 
-const handleRerun = async (job: Job, printer: Printer) => {
+const handleRerun = async (job: Job, printer: Device) => {
   await rerunJob(job, printer)
 };
 
@@ -48,7 +33,7 @@ async function handleCancel(jobToFind: Job, printerToFind: Device) {
 
 const confirmDelete = async () => {
   if (modalJob.value && modalPrinter.value) {
-    
+
     await removeJob(modalJob.value);
 
     modalJob.value = undefined;
@@ -78,7 +63,7 @@ function statusColor(status: string | undefined) {
   }
 }
 
-const bump = async (job: Job, printer: Printer, direction: string) => {
+const bump = async (job: Job, printer: Device, direction: string) => {
   switch (direction) {
     case 'up':
       await bumpjob(job, printer, 1)
@@ -106,14 +91,14 @@ const bump = async (job: Job, printer: Printer, direction: string) => {
   }
 }
 
-const isLastJob = (job: Job, printer: Printer) => {
+const isLastJob = (job: Job, printer: Device) => {
   return printer.queue ? printer.queue.indexOf(job) === printer.queue.length - 1 : false;
 }
-const isFirstJobPrinting = (job: Job, printer: Printer) => {
+const isFirstJobPrinting = (job: Job, printer: Device) => {
   if (!printer.queue) return false;
   return printer.queue[0] && printer.queue[0].status === 'printing';
 }
-const canBumpUp = (job: Job, printer: Printer) => {
+const canBumpUp = (job: Job, printer: Device) => {
   if (!printer.queue) return false;
   const index = printer.queue.indexOf(job);
   return index !== 0 && (index !== 1 || !isFirstJobPrinting(job, printer));
@@ -124,7 +109,8 @@ const canBumpUp = (job: Job, printer: Printer) => {
   <div class="container">
 
     <!-- Jacks Modals Comments -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"
+      data-bs-backdrop="static">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
@@ -132,7 +118,8 @@ const canBumpUp = (job: Job, printer: Printer) => {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p>Are you sure you want to remove this job from queue? Job will be saved to history with a final status of <i>cancelled</i>.</p>
+            <p>Are you sure you want to remove this job from queue? Job will be saved to history with a final status of
+              <i>cancelled</i>.</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -181,8 +168,8 @@ const canBumpUp = (job: Job, printer: Printer) => {
                 <tr v-for="job in printer.queue" :key="job.id">
                   <td>{{ job.id }}</td>
                   <td class="text-center">
-                    <button v-if="job.status == 'inqueue'" type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#exampleModal"
-                      @click="handleCancel(job, printer)">X</button>
+                    <button v-if="job.status == 'inqueue'" type="button" class="btn btn-danger w-100"
+                      data-bs-toggle="modal" data-bs-target="#exampleModal" @click="handleCancel(job, printer)">X</button>
                     <button v-else>
                       <RouterLink to="/">Goto release</RouterLink>
                     </button>
