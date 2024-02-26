@@ -247,7 +247,7 @@ class Job(db.Model):
             time_seconds = int(time_line.split(":")[1])
         else:
             # search for the line that contains "printing time", then the time estimate is in the format of "; estimated printing time (normal mode) = minutes seconds"
-            time_line = next(line for line in comment_lines if "printing time" in line)
+            time_line = next(line for line in comment_lines if "time" in line)
             time_minutes, time_seconds = map(int, re.findall(r'\d+', time_line))
             time_seconds += time_minutes * 60
         return time_seconds

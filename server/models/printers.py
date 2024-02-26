@@ -421,7 +421,8 @@ class Printer(db.Model):
     #  now when we set the status, we can emit the status to the frontend
     def setStatus(self, newStatus):
         try:
-            print("setting status")
+            if newStatus == "ready":
+                self.responseCount = 0
             self.status = newStatus
             
             # print(self.status)
