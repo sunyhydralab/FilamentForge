@@ -9,8 +9,6 @@ import { useRetrievePrintersInfo, printers } from './model/ports';
 const { retrieveInfo } = useRetrievePrintersInfo();
 
 onMounted(async () => {
-  console.log('App mounted')
-
   printers.value = await retrieveInfo()
 
   // sockets

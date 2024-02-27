@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { useRetrievePrintersInfo, type Device } from '../model/ports'
-import { useAddJobToQueue, type Job, useAutoQueue } from '../model/jobs'
+import { printers, type Device } from '../model/ports'
+import { useAddJobToQueue, useAutoQueue } from '../model/jobs'
 import { ref, onMounted } from 'vue'
 import { toast } from '@/model/toast';
 
-const { retrieveInfo } = useRetrievePrintersInfo()
 const { addJobToQueue } = useAddJobToQueue()
 const { auto } = useAutoQueue()
-
-const printers = ref<Array<Device>>([])
 
 // Form reference
 const form = ref<HTMLFormElement | null>(null);
@@ -41,15 +38,6 @@ const validateQuantity = () => {
     }
     return true;
 }
-
-// fills printers array with printers that have threads from the database
-onMounted(async () => {
-    try {
-        printers.value = await retrieveInfo()
-    } catch (error) {
-        console.error('There has been a problem with your fetch operation:', error)
-    }
-})
 
 // sends job to printer queue
 const handleSubmit = async () => {

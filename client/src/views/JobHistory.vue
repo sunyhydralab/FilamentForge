@@ -279,8 +279,10 @@ th {
 
 .col-date {
     width: 26vh;
-    overflow-x: auto;  /* Add a horizontal scrollbar if necessary */
-    white-space: nowrap;  /* Prevent the content from wrapping to the next line */
+    overflow-x: auto;
+    /* Add a horizontal scrollbar if necessary */
+    white-space: nowrap;
+    /* Prevent the content from wrapping to the next line */
 }
 
 .col-status {
@@ -299,7 +301,8 @@ ul.dropdown-menu.w-100.show li {
     margin-left: 1rem;
 }
 
-.form-check-input:focus, .form-control:focus {
+.form-check-input:focus,
+.form-control:focus {
     outline: none;
     box-shadow: none;
     border-color: #dee2e6;

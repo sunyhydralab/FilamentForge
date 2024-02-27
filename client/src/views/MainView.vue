@@ -11,19 +11,10 @@ const router = useRouter();
 // ref of a current job. Used to display the job details in the modal
 let currentJob = ref<Job>();
 
-let intervalId: number | undefined;
-
-onUnmounted(() => {
-  // Clear the interval when the component is unmounted to prevent memory leaks
-  if (intervalId) {
-    clearInterval(intervalId)
-  }
-})
-
 const sendToQueueView = (printer: Device | undefined) => {
   if (printer) {
     printer.isExpanded = true;
-    router.push({ name: 'QueueViewVue'});
+    router.push({ name: 'QueueViewVue' });
   }
 }
 
@@ -44,7 +35,6 @@ const releasePrinter = async (jobToFind: Job | undefined, key: number, printerTo
 }
 
 const setCurrentJob = (job: Job, printerName: string) => {
-  console.log("Setting current job: ", job)
   currentJob.value = job;
   currentJob.value.printer = printerName;
 }
@@ -89,7 +79,7 @@ const toTime = (seconds: number | undefined) => {
               <div class="card bg-light mb-3">
                 <div class="card-body">
                   <h5 class="card-title"><i class="fas fa-hourglass-half"></i> <b>Elapsed Time:</b> {{
-                    toTime(currentJob?.elapsed_time) }} </h5>
+                    toTime(currentJob?.time?.elapsed) }} </h5>
                 </div>
               </div>
             </div>
@@ -97,7 +87,7 @@ const toTime = (seconds: number | undefined) => {
               <div class="card bg-light mb-3">
                 <div class="card-body">
                   <h5 class="card-title"><i class="fas fa-hourglass-end"></i> <b>Remaining Time:</b> {{
-                    toTime(currentJob?.remaining_time) }} </h5>
+                    toTime(currentJob?.time?.remaining) }} </h5>
                 </div>
               </div>
             </div>
@@ -105,7 +95,7 @@ const toTime = (seconds: number | undefined) => {
               <div class="card bg-light mb-3">
                 <div class="card-body">
                   <h5 class="card-title"><i class="fas fa-stopwatch"></i> <b>Total Time:</b> {{
-                    toTime(currentJob?.total_time) }} </h5>
+                    toTime(currentJob?.time?.total) }} </h5>
                 </div>
               </div>
             </div>

@@ -16,10 +16,12 @@ export interface Job {
   printerid: number
   priority?: string
   // job_id: number
-  total_time?: number
-  elapsed_time?: number
-  remaining_time?: number
-  timer?: NodeJS.Timeout
+  time?: {
+    total?: number
+    elapsed?: number
+    remaining?: number
+    timer?: NodeJS.Timeout
+  }
 }
 
 export function useGetJobs() {

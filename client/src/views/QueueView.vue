@@ -12,13 +12,11 @@ const { bumpjob } = bumpJobs()
 const modalJob = ref<Job>();
 const modalPrinter = ref<Device>();
 
-let intervalId: number | undefined;
-
 onUnmounted(() => {
-  // Clear the interval when the component is unmounted to prevent memory leaks
-  if (intervalId) {
-    clearInterval(intervalId)
-  }
+  // for printer in printers, set isExpanded to false
+  printers.value.forEach(printer => {
+    printer.isExpanded = false
+  })
 })
 
 const handleRerun = async (job: Job, printer: Device) => {
@@ -119,7 +117,8 @@ const canBumpUp = (job: Job, printer: Device) => {
           </div>
           <div class="modal-body">
             <p>Are you sure you want to remove this job from queue? Job will be saved to history with a final status of
-              <i>cancelled</i>.</p>
+              <i>cancelled</i>.
+            </p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
