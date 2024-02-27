@@ -259,6 +259,10 @@ class Job(db.Model):
         current_app.socketio.emit(
             'job_time', {'job_id': self.id, 'total_time': self.total_time})
 
+    def sendGcodeLine(self, gcode):
+        current_app.socketio.emit(
+            'gcode_viewer', {'job_id': self.id, 'gcode': gcode})
+
     @classmethod
     def setDBstatus(cls, jobid, status):
         cls.update_job_status(jobid, status)

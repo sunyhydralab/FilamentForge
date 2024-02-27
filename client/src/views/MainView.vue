@@ -3,6 +3,7 @@ import { useSetStatus, type Device, printers } from '@/model/ports';
 import { type Job, useReleaseJob } from '@/model/jobs';
 import { useRouter } from 'vue-router';
 import { onUnmounted, ref } from 'vue';
+import GCodeViewerModal from '@/components/GCodeViewerModal.vue';
 
 const { setStatus } = useSetStatus();
 const { releaseJob } = useReleaseJob()
@@ -139,7 +140,7 @@ const toTime = (seconds: number | undefined) => {
               <div class="card bg-light mb-3">
                 <div class="card-body">
                   <h5 class="card-title">
-                    <pre> .GCODE VIEWER </pre>
+                    <GCodeViewerModal :job="currentJob" />
                   </h5>
                 </div>
               </div>

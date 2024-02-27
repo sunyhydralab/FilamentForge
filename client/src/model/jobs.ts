@@ -22,6 +22,7 @@ export interface Job {
     remaining?: number
     timer?: NodeJS.Timeout
   }
+  gcode?: string
 }
 
 export function useGetJobs() {

@@ -271,6 +271,7 @@ class Printer(db.Model):
                     # test to see if thatll be an issue.
 
                     res = self.sendGcode(line)
+                    job.sendGcodeLine(line)
 
                     # if("M601" in line):
                     #     self.setStatus("paused")

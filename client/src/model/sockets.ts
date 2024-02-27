@@ -145,3 +145,21 @@ export function setupTimeSocket(printers: any) {
     }, 1000) // Update every second
   })
 }
+
+export function setupGCodeViewerSocket(printers: any) {
+  socket.on('gcode_viewer', (data: any) => {
+    const job = printers
+      .flatMap((printer: { queue: any }) => printer.queue)
+      .find((job: { id: any }) => job?.id === data.job_id)
+
+    if (!job.gcode) {
+      job.gcode = ''
+    }
+
+    if (job) {
+      job.gcode = data.gcode
+    }
+
+    console.log('job.gcode:', job.gcode)
+  })
+}
