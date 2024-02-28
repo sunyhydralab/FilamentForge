@@ -144,7 +144,12 @@ class Printer(db.Model):
             )
 
     def connect(self):
-        self.ser = serial.Serial(self.device, 115200, timeout=1)
+        try:
+            self.ser = serial.Serial(self.device, 115200, timeout=1)
+        except Exception as e:
+            print("ERROR CONNECTING:", e)
+            self.setError(e)
+            return "error"
 
     def disconnect(self):
         if self.ser:
@@ -381,7 +386,7 @@ class Printer(db.Model):
                 print("exception in else of verdict")
                 self.getQueue().deleteJob(job.id, self.id)
                 # self.setStatus("error")
-                self.setError("Printer not connected")
+                # self.setError("Printer not connected")
                 self.sendStatusToJob(job, job.id, "error")
 
             return
