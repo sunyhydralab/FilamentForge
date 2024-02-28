@@ -127,7 +127,7 @@ const toTime = (seconds: number | undefined) => {
   </div>
 
   <!-- bootstrap 'gcodeModal' -->
-  <div class="modal fade" id="gcodeModal" tabindex="-1" aria-labelledby="gcodeModalLabel" aria-hidden="true">
+  <div class="modal fade gcode-modal" id="gcodeModal" tabindex="-1" aria-labelledby="gcodeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content">
         <div class="modal-header">
@@ -137,13 +137,7 @@ const toTime = (seconds: number | undefined) => {
         <div class="modal-body">
           <div class=" row">
             <div class="col-sm-12">
-              <div class="card bg-light mb-3">
-                <div class="card-body">
-                  <h5 class="card-title">
-                    <GCodeViewerModal :job="currentJob" />
-                  </h5>
-                </div>
-              </div>
+              <GCodeViewerModal :job="currentJob" />
             </div>
           </div>
         </div>
@@ -320,5 +314,10 @@ p {
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.gcode-modal .modal-body,
+.gcode-modal .card-body {
+  padding-bottom: 0;
 }
 </style>

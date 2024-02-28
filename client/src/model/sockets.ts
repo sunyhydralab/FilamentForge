@@ -152,14 +152,14 @@ export function setupGCodeViewerSocket(printers: any) {
       .flatMap((printer: { queue: any }) => printer.queue)
       .find((job: { id: any }) => job?.id === data.job_id)
 
-    if (!job.gcode) {
-      job.gcode = ''
-    }
-
     if (job) {
-      job.gcode = data.gcode
-    }
+      // Ensure job.gcode is initialized as an array if it's not already
+      if (!Array.isArray(job.gcode)) {
+        job.gcode = []
+      }
 
-    console.log('job.gcode:', job.gcode)
+      // Create a new array with the new gcode
+      job.gcode = [...job.gcode, data.gcode]
+    }
   })
 }

@@ -270,8 +270,8 @@ class Printer(db.Model):
                     # right now, if pause is in the line, M601 will be sent twice to avoid duplicate code.
                     # test to see if thatll be an issue.
 
-                    res = self.sendGcode(line)
                     job.sendGcodeLine(line)
+                    res = self.sendGcode(line)
 
                     # if("M601" in line):
                     #     self.setStatus("paused")
@@ -368,7 +368,7 @@ class Printer(db.Model):
                     self.setStatus("error")
                     self.sendStatusToJob(job, job.id, "error")
                 elif verdict == "cancelled":
-                    # self.endingSequence()
+                    self.endingSequence()
                     self.disconnect()
                     self.sendStatusToJob(job, job.id, "cancelled")
                 else:
