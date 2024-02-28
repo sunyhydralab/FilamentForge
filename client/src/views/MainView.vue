@@ -264,6 +264,7 @@ const toTime = (seconds: number | undefined) => {
         </td>
 
         <td style="width: 1%; white-space: nowrap;">
+          <div v-if="printer.status = 'printing'">
           <div style="display: inline-flex;">
             <button type="button" class="btn btn-primary btn-circle me-2" data-bs-toggle="modal"
               data-bs-target="#infoModal" v-if="printer.queue && printer.queue.length > 0" v-bind:job="printer.queue[0]"
@@ -276,6 +277,7 @@ const toTime = (seconds: number | undefined) => {
               <i class="fas fa-code"></i>
             </button>
           </div>
+        </div>
         </td>
       </tr>
     </table>
