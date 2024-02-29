@@ -3,7 +3,7 @@ import { useSetStatus, type Device, printers } from '@/model/ports';
 import { type Job, useReleaseJob } from '@/model/jobs';
 import { useRouter } from 'vue-router';
 import { onUnmounted, ref } from 'vue';
-import GCodeViewerModal from '@/components/GCodeViewerModal.vue';
+import GCodeViewer from '@/components/GCodeViewer.vue';
 
 const { setStatus } = useSetStatus();
 const { releaseJob } = useReleaseJob()
@@ -137,7 +137,7 @@ const toTime = (seconds: number | undefined) => {
         <div class="modal-body">
           <div class=" row">
             <div class="col-sm-12">
-              <GCodeViewerModal :job="currentJob" />
+              <GCodeViewer :job="currentJob" />
             </div>
           </div>
         </div>
@@ -213,7 +213,7 @@ const toTime = (seconds: number | undefined) => {
         </div> -->
 
         <td style="width: 250px;">
-          <div v-if="printer.status === 'printing' || printer.status == 'paused'">
+          <div v-if="(printer.status === 'printing' || printer.status == 'paused') && (printer.queue && printer.queue.length > 0)">
             <!-- <div v-for="job in printer.queue" :key="job.id"> -->
             <!-- Display the elapsed time -->
             <div class="progress" style="position: relative;">
@@ -264,7 +264,7 @@ const toTime = (seconds: number | undefined) => {
         </td>
 
         <td style="width: 1%; white-space: nowrap;">
-          <div v-if="printer.status = 'printing'">
+          <div v-if="printer.status == 'printing'">
           <div style="display: inline-flex;">
             <button type="button" class="btn btn-primary btn-circle me-2" data-bs-toggle="modal"
               data-bs-target="#infoModal" v-if="printer.queue && printer.queue.length > 0" v-bind:job="printer.queue[0]"
