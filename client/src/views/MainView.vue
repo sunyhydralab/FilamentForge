@@ -4,7 +4,8 @@ import { type Job, useReleaseJob } from '@/model/jobs';
 import { useRouter } from 'vue-router';
 import { onUnmounted, ref } from 'vue';
 import GCodeTerminal from '@/components/GCodeTerminal.vue';
-import GCode3DViewer from '@/components/GCode3DViewer.vue';
+import GCode3DImageViewer from '@/components/GCode3DImageViewer.vue';
+import GCode3DLiveViewer from '@/components/GCode3DLiveViewer.vue';
 
 const { setStatus } = useSetStatus();
 const { releaseJob } = useReleaseJob()
@@ -12,6 +13,8 @@ const { releaseJob } = useReleaseJob()
 const router = useRouter();
 // ref of a current job. Used to display the job details in the modal
 let currentJob = ref<Job>();
+let isGcodeImageVisible = ref(false);
+let isGcodeLiveViewVisible = ref(false);
 
 const sendToQueueView = (printer: Device | undefined) => {
   if (printer) {
@@ -36,9 +39,14 @@ const releasePrinter = async (jobToFind: Job | undefined, key: number, printerTo
   await releaseJob(jobToFind, key, printerIdToPrintTo)
 }
 
-const setCurrentJob = (job: Job, printerName: string) => {
+const openModal = (job: Job, printerName: string, num: number) => {
   currentJob.value = job;
   currentJob.value.printer = printerName;
+  if (num == 1) {
+    isGcodeLiveViewVisible.value = true
+  } else if (num == 2) {
+    isGcodeImageVisible.value = true
+  }
 }
 
 const toTime = (seconds: number | undefined) => {
@@ -127,20 +135,40 @@ const toTime = (seconds: number | undefined) => {
     </div>
   </div>
 
-  <!-- bootstrap 'gcodeModal' -->
-  <div class="modal fade gcode-modal" id="gcodeModal" tabindex="-1" aria-labelledby="gcodeModalLabel" aria-hidden="true">
+  <!-- bootstrap 'gcodeImageModal' -->
+  <div class="modal fade" id="gcodeImageModal" tabindex="-1" aria-labelledby="gcodeImageModalLabel" aria-hidden="true"
+    @shown.bs.modal="isGcodeImageVisible = true" @hidden.bs.modal="isGcodeImageVisible = false">
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="gcodeModalLabel"><b>{{ currentJob?.printer }}:</b> {{ currentJob?.name }}</h5>
+          <h5 class="modal-title" id="gcodeImageModalLabel"><b>{{ currentJob?.printer }}:</b> {{ currentJob?.name }}</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class=" row">
+          <div class="row">
             <div class="col-sm-12">
-              <GCode3DViewer :job="currentJob" />
-              <GCodeTerminal :job="currentJob" />
+              <GCode3DImageViewer v-if="isGcodeImageVisible" :job="currentJob" />
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bootstrap 'gcodeLiveViewModal' -->
+  <div class="modal fade gcode-live-modal" id="gcodeLiveViewModal" tabindex="-1" aria-labelledby="gcodeLiveViewModalLaebl"
+    aria-hidden="true" @shown.bs.modal="isGcodeLiveViewVisible = true" @hidden.bs.modal="isGcodeLiveViewVisible = false">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="gcodeLiveViewModalLabel"><b>{{ currentJob?.printer }}:</b> {{ currentJob?.name }}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <GCode3DLiveViewer v-if="isGcodeLiveViewVisible" :job="currentJob" />
+            <GCodeTerminal :job="currentJob" />
           </div>
         </div>
       </div>
@@ -215,7 +243,8 @@ const toTime = (seconds: number | undefined) => {
         </div> -->
 
         <td style="width: 250px;">
-          <div v-if="(printer.status === 'printing' || printer.status == 'paused') && (printer.queue && printer.queue.length > 0)">
+          <div
+            v-if="(printer.status === 'printing' || printer.status == 'paused') && (printer.queue && printer.queue.length > 0)">
             <!-- <div v-for="job in printer.queue" :key="job.id"> -->
             <!-- Display the elapsed time -->
             <div class="progress" style="position: relative;">
@@ -266,20 +295,26 @@ const toTime = (seconds: number | undefined) => {
         </td>
 
         <td style="width: 1%; white-space: nowrap;">
-          <div v-if="printer.status == 'printing'">
+          <!--  -->
+          <!-- <div v-if="printer.status == 'printing'"> -->
           <div style="display: inline-flex;">
             <button type="button" class="btn btn-primary btn-circle me-2" data-bs-toggle="modal"
               data-bs-target="#infoModal" v-if="printer.queue && printer.queue.length > 0" v-bind:job="printer.queue[0]"
-              @click="printer.name && setCurrentJob(printer.queue[0], printer.name)">
+              @click="printer.name && openModal(printer.queue[0], printer.name, 0)">
               <i class="fas fa-info"></i>
             </button>
-            <button type="button" class="btn btn-success btn-circle" data-bs-toggle="modal" data-bs-target="#gcodeModal"
-              v-if="printer.queue && printer.queue.length > 0" v-bind:job="printer.queue[0]"
-              @click="printer.name && setCurrentJob(printer.queue[0], printer.name)">
+            <button type="button" class="btn btn-success btn-circle me-2" data-bs-toggle="modal"
+              data-bs-target="#gcodeLiveViewModal" v-if="printer.queue && printer.queue.length > 0"
+              v-bind:job="printer.queue[0]" @click="printer.name && openModal(printer.queue[0], printer.name, 1)">
               <i class="fas fa-code"></i>
             </button>
+            <button type="button" class="btn btn-info btn-circle" data-bs-toggle="modal" data-bs-target="#gcodeImageModal"
+              v-if="printer.queue && printer.queue.length > 0" v-bind:job="printer.queue[0]"
+              @click="printer.name && openModal(printer.queue[0], printer.name, 2)">
+              <i class="fa-regular fa-image"></i>
+            </button>
           </div>
-        </div>
+          <!-- </div> -->
         </td>
       </tr>
     </table>
@@ -320,8 +355,8 @@ p {
   text-align: center;
 }
 
-.gcode-modal .modal-body,
-.gcode-modal .card-body {
+.gcode-live-modal .modal-body,
+.gcode-live-modal .card-body {
   padding-bottom: 0;
 }
 </style>

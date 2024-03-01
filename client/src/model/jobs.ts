@@ -1,4 +1,4 @@
-import { api } from './ports'
+import { api, printers } from './ports'
 import { toast } from './toast'
 import { type Device } from '@/model/ports'
 import { saveAs } from 'file-saver'
@@ -205,7 +205,7 @@ export function useGetGcode() {
   }
 }
 
-export function useGetJobFile() {
+export function useDownloadFile() {
   return {
     async getFile(jobid: number) {
       try {
@@ -213,6 +213,22 @@ export function useGetJobFile() {
         const file = new Blob([response.file], { type: 'text/plain' })
         const file_name = response.file_name
         saveAs(file, file_name)
+      } catch (error) {
+        console.error(error)
+        toast.error('An error occurred while retrieving the file')
+      }
+    }
+  }
+}
+
+export function useGetFile() {
+  return {
+    async getFile(job: Job) {
+      try {
+        const jobid = job.id
+        const response = await api(`getfile?jobid=${jobid}`)
+        const file = new File([response.file], response.file_name, { type: 'text/plain' })
+        job.file = file
       } catch (error) {
         console.error(error)
         toast.error('An error occurred while retrieving the file')

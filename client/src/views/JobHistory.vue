@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { printers, type Device } from '../model/ports'
-import { useGetJobs, type Job, useRerunJob, useGetJobFile } from '@/model/jobs';
+import { useGetJobs, type Job, useRerunJob, useDownloadFile } from '@/model/jobs';
 import { computed, onMounted, ref } from 'vue';
 
 const { jobhistory } = useGetJobs()
 const { rerunJob } = useRerunJob()
-const { getFile } = useGetJobFile()
+const { getFile } = useDownloadFile()
 
 const selectedPrinters = ref<Array<Device>>([])
 let jobs = ref<Array<Job>>([])

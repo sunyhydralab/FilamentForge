@@ -42,15 +42,22 @@ let gcodeDisplay = computed(() => {
     }
 })
 
+let isModalVisible = ref(false)
+
 onMounted(async () => {
     await nextTick()
 
-    const modalElement = document.getElementById('gcodeModal')
+    const modalElement = document.getElementById('gcodeLiveViewModal')
     terminalElement = document.querySelector('.gcode-display') as HTMLElement
     if (modalElement && terminalElement) {
         modalElement.addEventListener('shown.bs.modal', () => {
             terminalElement.scrollTop = terminalElement.scrollHeight
             isUserScrolling.value = false
+            isModalVisible.value = true
+        })
+
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            isModalVisible.value = false
         })
 
         terminalElement.addEventListener('scroll', () => {
@@ -67,12 +74,14 @@ onMounted(async () => {
 
         // Watch the gcodeDisplay for changes and adjust the scroll position each time it changes
         watchEffect(() => {
-            gcodeDisplay.value
-            if (!isPaused.value && !isUserScrolling.value) {
-                terminalElement.scrollTop = terminalElement.scrollHeight
-            } else if (!isPaused.value && isUserScrolling.value && terminalElement.scrollTop === 0) {
-                // If the user has scrolled to the top, show the first GCode line
-                terminalElement.scrollTop = 0
+            if (isModalVisible.value) {
+                gcodeDisplay.value
+                if (!isPaused.value && !isUserScrolling.value) {
+                    terminalElement.scrollTop = terminalElement.scrollHeight
+                } else if (!isPaused.value && isUserScrolling.value && terminalElement.scrollTop === 0) {
+                    // If the user has scrolled to the top, show the first GCode line
+                    terminalElement.scrollTop = 0
+                }
             }
         })
     }
@@ -131,5 +140,6 @@ onMounted(async () => {
     padding: .5rem;
     white-space: pre-wrap;
     word-wrap: break-word;
+    margin-top: 1rem;
 }
 </style>
