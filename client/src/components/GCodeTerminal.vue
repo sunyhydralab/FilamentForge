@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, toRef, watchEffect, ref, nextTick, computed } from 'vue'
-import * as THREE from 'three'
 import type { Job } from '@/model/jobs';
 
 const props = defineProps({
@@ -8,19 +7,6 @@ const props = defineProps({
 })
 const job = toRef(props, 'job')
 
-// 3D VIEWER
-const scene = new THREE.Scene()
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-const renderer = new THREE.WebGLRenderer()
-
-renderer.setSize(window.innerWidth, window.innerHeight)
-const gcodeViewerElement = document.getElementById('gcodeViewer')
-if (gcodeViewerElement) {
-    gcodeViewerElement.appendChild(renderer.domElement)
-    renderer.setSize(gcodeViewerElement.clientWidth, gcodeViewerElement.clientHeight)
-}
-
-// FAKE TERMINAL
 let isPaused = ref(false)
 let lastVisibleLineIndex = ref(0)
 let isUserScrolling = ref(false)
@@ -95,7 +81,6 @@ onMounted(async () => {
 
 <template>
     <div>
-        <div id="gcodeViewer" style="width: 100%; height: 400px;"></div>
         <div class="gcode-display-container">
             <pre class="gcode-display">{{ gcodeDisplay }}</pre>
             <div class="controls">

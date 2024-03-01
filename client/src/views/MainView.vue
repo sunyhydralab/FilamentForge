@@ -4,6 +4,7 @@ import { type Job, useReleaseJob } from '@/model/jobs';
 import { useRouter } from 'vue-router';
 import { onUnmounted, ref } from 'vue';
 import GCodeTerminal from '@/components/GCodeTerminal.vue';
+import GCode3DViewer from '@/components/GCode3DViewer.vue';
 
 const { setStatus } = useSetStatus();
 const { releaseJob } = useReleaseJob()
@@ -137,6 +138,7 @@ const toTime = (seconds: number | undefined) => {
         <div class="modal-body">
           <div class=" row">
             <div class="col-sm-12">
+              <GCode3DViewer :job="currentJob" />
               <GCodeTerminal :job="currentJob" />
             </div>
           </div>
