@@ -7,6 +7,7 @@ const props = defineProps({
 })
 const job = toRef(props, 'job')
 
+let maxLines = ref(500)
 let isPaused = ref(false)
 let lastVisibleLineIndex = ref(0)
 let isUserScrolling = ref(false)
@@ -34,9 +35,10 @@ let gcodeDisplay = computed(() => {
         // When paused, return only the gcode lines up to the last visible line
         return job.value?.gcode?.slice(0, lastVisibleLineIndex.value).join('\n') || ''
     } else if (job.value?.gcode) {
-        // When not paused, return all the gcode lines and update the last visible line index
+        // When not paused, return the last maxLines gcode lines and update the last visible line index
+        let start = Math.max(0, job.value.gcode.length - maxLines.value)
         lastVisibleLineIndex.value = job.value.gcode.length
-        return job.value.gcode.join('\n') || ''
+        return job.value.gcode.slice(start).join('\n') || ''
     } else {
         return ''
     }

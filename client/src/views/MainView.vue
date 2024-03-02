@@ -295,7 +295,7 @@ const toTime = (seconds: number | undefined) => {
         </td>
 
         <td style="width: 1%; white-space: nowrap;">
-          <!--  -->
+          <!-- to display buttons when job is in queue and not printing -->
           <!-- <div v-if="printer.status == 'printing'"> -->
           <div style="display: inline-flex;">
             <button type="button" class="btn btn-primary btn-circle me-2" data-bs-toggle="modal"

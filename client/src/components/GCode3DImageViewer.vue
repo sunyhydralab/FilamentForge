@@ -2,7 +2,6 @@
 import { nextTick, onMounted, onActivated, onDeactivated, ref, toRef } from 'vue';
 import { useGetFile, type Job } from '@/model/jobs';
 import * as GCodePreview from 'gcode-preview';
-import { parseArgs } from 'util';
 
 const { getFile } = useGetFile();
 
