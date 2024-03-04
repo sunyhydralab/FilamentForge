@@ -105,9 +105,6 @@ class PrinterStatusService:
                     "file_name_original": job.file_name_original, 
                     "progress": job.progress,
                     "total_time": job.total_time,
-                    "start_time": job.start_time,
-                    "elapsed_time": job.elapsed_time,
-                    "pause_time": job.pause_time,
                 }
                 printer_info['queue'].append(job_info)
             

@@ -20,10 +20,14 @@ export interface Job {
   printerid: number
   priority?: string
   // job_id: number
-  total_time?: number
-  elapsed_time?: number
-  remaining_time?: number
-  timer?: NodeJS.Timeout
+  time?: {
+    total?: number
+    elapsed?: number
+    remaining?: number
+    extra?: number
+    eta?: string
+    timer?: NodeJS.Timeout
+  }
 }
 
 export function useGetJobs() {
@@ -263,103 +267,83 @@ export function setupJobStatusSocket(printers: any) {
 }
 
 export function setupTimeSocket(printers: any) {
-  // Listen for the 'job_time' event
   socket.on('job_time', (data: any) => {
-    // Get the start time and total time from the server
     const job_id = data.job_id
     const total_time = data.total_time
 
-    // Find the job with the matching id
+    // Find the job and printer with the matching id
     const job = printers
       .flatMap((printer: { queue: any }) => printer.queue)
       .find((job: { id: any }) => job?.id === data.job_id)
+    const printer = printers.find((printer: { queue: any }) =>
+      printer.queue.some((job: { id: any }) => job?.id === data.job_id)
+    )
 
     if (!job) {
       console.error(`Job with id ${job_id} not found`)
       return
     }
 
-    // Clear any existing timer
-    if (job.timer) {
-      clearInterval(job.timer)
-      delete job.timer
-    }
-
-    // Set the total time for the job
-    job.total_time = total_time
-
-    // Set the start time to the current timestamp
-    job.start_time = Math.floor(Date.now() / 1000)
-
-    // Create a timer that updates the time every second
-    job.timer = startTimer(job, job.start_time, 0, false) // Added fourth argument
-  })
-
-  // Listen for the 'job_pause' event
-  socket.on('job_pause', (data: any) => {
-    const job = printers
-      .flatMap((printer: { queue: any }) => printer.queue)
-      .find((job: { id: any }) => job?.id === data.job_id)
-
-    if (job) {
-      // Calculate the elapsed time
-      const pauseTime = Math.floor(Date.now() / 1000)
-      job.elapsed_time = pauseTime - job.start_time
-
-      // Update job.start_time to the pause time
-      job.start_time = pauseTime
-
-      // Pause the timer but keep incrementing the elapsed_time and total_time
-      if (job.timer) {
-        clearInterval(job.timer)
-        job.timer = startTimer(job, job.start_time, job.elapsed_time, true)
+    if (!job.time) {
+      job.time = {
+        total: 0,
+        elapsed: 0,
+        remaining: 0,
+        extra: 0,
+        eta: "00:00:00",
+        timer: null
       }
     }
-  })
 
-  // Listen for the 'job_resume' event
-  socket.on('job_resume', (data: any) => {
-    const job = printers
-      .flatMap((printer: { queue: any }) => printer.queue)
-      .find((job: { id: any }) => job?.id === data.job_id)
+    job.time.total = total_time
+    job.time.elapsed = 0
+    job.time.remaining = total_time
 
-    if (job) {
-      // Clear any existing timer
-      if (job.timer) {
-        clearInterval(job.timer)
-        delete job.timer
+    const calculateETA = (totalSeconds: number | undefined) => {
+      if (totalSeconds) {
+        // Get the current date
+        const now = new Date();
+
+        // Add the total time remaining (in milliseconds)
+        now.setTime(now.getTime() + totalSeconds * 1000);
+
+        // Format the time as a string in 12-hour format with "AM" or "PM"
+        const eta = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        return eta;
       }
 
-      // Update job.start_time to the current timestamp
-      job.start_time = Math.floor(Date.now() / 1000)
-
-      // Start the timer
-      job.timer = startTimer(job, job.start_time, job.elapsed_time, false)
+      return "00:00:00 AM";
     }
+
+    job.time.eta = calculateETA(total_time)
+
+    // Start a timer for the job
+    job.time.timer = setInterval(() => {
+      switch (printer.status) {
+        case 'printing':
+          job.time.elapsed += 1
+          if (job.time.elapsed > job.time.total) {
+            job.time.extra += 1
+          } else {
+            job.time.remaining -= 1
+          }
+          break
+        case 'paused':
+          job.time.elapsed += 1
+          job.time.total += 1
+          break
+        case 'cancelled':
+        case 'error':
+        case 'complete':
+          clearInterval(job.time.timer)
+          break
+      }
+
+      // If the job is finished, clear the timer
+      if (job.time.remaining <= 0) {
+        clearInterval(job.time.timer)
+      }
+    }, 1000) // Update every second
   })
-}
-
-function startTimer(job: any, start_time: number, elapsed_time: number, isPaused: boolean) {
-  // Ensure start_time and elapsed_time are defined and are numbers
-  start_time = start_time || 0
-  elapsed_time = elapsed_time || 0
-
-  return setInterval(() => {
-    // Calculate the elapsed time
-    let current_elapsed_time = Math.floor(Date.now() / 1000) - start_time + elapsed_time
-
-    // Calculate the remaining time
-    const remaining_time = isPaused ? job.remaining_time : job.total_time - current_elapsed_time
-
-    // Update the job's time variables
-    job.total_time = isPaused ? job.total_time + 1 : job.total_time
-    job.elapsed_time = current_elapsed_time
-    job.remaining_time = remaining_time
-
-    // If the job is finished, stop the timer
-    if (current_elapsed_time >= job.total_time) {
-      clearInterval(job.timer)
-      delete job.timer
-    }
-  }, 1000)
 }
