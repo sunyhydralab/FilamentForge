@@ -3,7 +3,6 @@ import { useSetStatus, type Device, printers } from '@/model/ports';
 import { type Job, useReleaseJob } from '@/model/jobs';
 import { useRouter } from 'vue-router';
 import { onUnmounted, ref } from 'vue';
-import GCodeTerminal from '@/components/GCodeTerminal.vue';
 import GCode3DImageViewer from '@/components/GCode3DImageViewer.vue';
 import GCode3DLiveViewer from '@/components/GCode3DLiveViewer.vue';
 
@@ -168,7 +167,6 @@ const toTime = (seconds: number | undefined) => {
         <div class="modal-body">
           <div class="row">
             <GCode3DLiveViewer v-if="isGcodeLiveViewVisible" :job="currentJob" />
-            <GCodeTerminal :job="currentJob" />
           </div>
         </div>
       </div>
