@@ -137,14 +137,16 @@ async function submitFilter() {
 <template>
     <div class="container">
         <h2 class="mb-2 text-center">Job History View</h2>
-        <div class="mb-2 p-2 border rounded">
+        <div class="container-fluid mb-2 p-2 border rounded">
             <div class="row justify-content-center">
-                <div class="col-md-4">
-                    <label for="pageSize" class="form-label">Jobs per page:</label>
-                    <input id="pageSize" type="number" v-model.number="pageSize" min="1" class="form-control">
-                </div>
 
-                <div class="col-md-4">
+              <div class="col-md-3 d-flex align-items-center">
+                <label for="pageSize" class="form-label" style="white-space: nowrap;">Jobs per page:</label>
+                <input id="pageSize" type="number" v-model.number="pageSize" min="1" class="form-control mx-2"> 
+                <span>/&nbsp;{{ totalJobs }}</span>
+              </div>
+
+                <div class="col-md-3">
                     <label class="form-label">Device:</label>
                     <div class="dropdown w-100">
                         <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="dropdownMenuButton"
@@ -165,7 +167,7 @@ async function submitFilter() {
                     </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Order:</label>
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="order" id="orderNewest" value="newest"
@@ -237,7 +239,6 @@ async function submitFilter() {
                 </tr>
             </tbody>
         </table>
-        <p class="mt-2">Total Jobs: {{ totalJobs }}</p>
         <nav aria-label="Page navigation">
             <ul class="pagination">
                 <li class="page-item" :class="{ 'disabled': page <= 1 }">
