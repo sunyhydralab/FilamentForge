@@ -275,18 +275,20 @@ class Printer(db.Model):
                     if (self.getStatus() == "paused" or ("M601" in line) or ("M0" in line)):
                         self.setStatus("paused")
                         # set relative positioning mode
-                        self.sendGcode("G91", job)
-                        self.sendGcode("G1 Z10 F300", job)  # move up 10mm
-                        self.sendGcode("M601", job)  # pause command
+                        # self.sendGcode("G91", job)
+                        # self.sendGcode("G1 Z10 F300", job)  # move up 10mm
+                        # self.sendGcode("M601", job) # pause command
+                        self.sendGcode("M600", job) # change filament command
                         # self.sendGcode("G1 Z-10 F300")
                         pause_time = time.time()  # get the current time
                         while (True):
                             stat = self.getStatus()
                             if (stat == "printing"):
                                 # move back to previous position
-                                self.sendGcode("G1 Z-10 F300", job)
-                                # set back to absolute positioning
-                                self.sendGcode("G90", job)
+                                # self.sendGcode("G1 Z-10 F300", job)
+                                # # set back to absolute positioning
+                                # self.sendGcode("G90", job)
+                                # self.sendGcode("M602", job)  # pause resume command
                                 break
                             elif time.time() - pause_time > 1200:  # 20 minutes * 60 seconds
                                 return "paused_too_long"
@@ -330,22 +332,25 @@ class Printer(db.Model):
     def endingSequence(self):
         try:
             # *** Ender 3 Pro ending sequence ***
-            self.gcodeEnding("G91")  # Relative positioning
-            self.gcodeEnding("G1 E-2 F2700")  # Retract a bit
-            self.gcodeEnding("G1 E-2 Z0.2 F2400")  # Retract and raise Z
-            self.gcodeEnding("G1 X5 Y5 F3000")  # Wipe out
-            self.gcodeEnding("G1 Z10")  # Raise Z more
-            self.gcodeEnding("G90")  # Absolute positioning
-            self.gcodeEnding("G1 X0 Y220")  # Present print
-            self.gcodeEnding("M106 S0")  # Turn-off fan
-            self.gcodeEnding("M104 S0")  # Turn-off hotend
-            self.gcodeEnding("M140 S0")  # Turn-off bed
-            self.gcodeEnding("M84 X Y E")  # Disable all steppers but Z
+            # self.gcodeEnding("G91")  # Relative positioning
+            # self.gcodeEnding("G1 E-2 F2700")  # Retract a bit
+            # self.gcodeEnding("G1 E-2 Z0.2 F2400")  # Retract and raise Z
+            # self.gcodeEnding("G1 X5 Y5 F3000")  # Wipe out
+            # self.gcodeEnding("G1 Z10")  # Raise Z more
+            # self.gcodeEnding("G90")  # Absolute positioning
+            # self.gcodeEnding("G1 X0 Y220")  # Present print
+            # self.gcodeEnding("M106 S0")  # Turn-off fan
+            # self.gcodeEnding("M104 S0")  # Turn-off hotend
+            # self.gcodeEnding("M140 S0")  # Turn-off bed
+            # self.gcodeEnding("M84 X Y E")  # Disable all steppers but Z
 
             # *** Prusa i3 MK3 ending sequence ***
             # self.gcodeEnding("M104 S0") # turn off extruder
             # self.gcodeEnding("M140 S0") # turn off heatbed
             # self.gcodeEnding("M107") # turn off fan
+            # self.gcodeEnding("G91") # relative positioning
+            # self.gcodeEnding("G1 Z10 F3000") # move Z up
+            # self.gcodeEnding("G90") # absolute positioning
             # self.gcodeEnding("G1 X0 Y210") # home X axis and push Y forward
             # self.gcodeEnding("M84") # disable motors
 
@@ -361,6 +366,16 @@ class Printer(db.Model):
             # M142 S36 ; reset heatbreak target temp
             # M84 X Y E ; disable motors
             # ; max_layer_z = [max_layer_z]
+            self.gcodeEnding("{if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+1, max_print_height)} F720 {endif}") # Move print head up
+            self.gcodeEnding("M104 S0") # turn off temperature
+            self.gcodeEnding("M140 S0") # turn off heatbed
+            self.gcodeEnding("M107") # turn off fan
+            self.gcodeEnding("G1 X241 Y170 F3600") # park
+            self.gcodeEnding("{if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+23, max_print_height)} F300 {endif}") # Move print head up
+            self.gcodeEnding("G4") # wait
+            self.gcodeEnding("M900 K0") # reset LA
+            self.gcodeEnding("M142 S36") # reset heatbreak target temp
+            self.gcodeEnding("M84 X Y E") # disable motors
 
         except Exception as e:
             self.setError(e)
