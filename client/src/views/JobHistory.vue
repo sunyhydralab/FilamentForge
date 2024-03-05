@@ -140,11 +140,11 @@ async function submitFilter() {
         <div class="container-fluid mb-2 p-2 border rounded">
             <div class="row justify-content-center">
 
-              <div class="col-md-3 d-flex align-items-center">
-                <label for="pageSize" class="form-label" style="white-space: nowrap;">Jobs per page:</label>
-                <input id="pageSize" type="number" v-model.number="pageSize" min="1" class="form-control mx-2"> 
-                <span>/&nbsp;{{ totalJobs }}</span>
-              </div>
+            <div class="col-md-3 d-flex align-items-center">
+                <label for="pageSize" class="form-label my-auto" style="white-space: nowrap;">Jobs per page:</label>
+                <input id="pageSize" type="number" v-model.number="pageSize" min="1" class="form-control mx-2 my-auto"> 
+                <label class="my-auto">/&nbsp;{{ totalJobs }}</label>
+            </div>
 
                 <div class="col-md-3">
                     <label class="form-label">Device:</label>
