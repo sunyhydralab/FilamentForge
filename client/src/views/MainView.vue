@@ -102,6 +102,17 @@ const toTime = (seconds: number | undefined) => {
   }
   return "00:00:00";
 }
+
+const toDateString = (date: Date | undefined) => {
+  if (date) {
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  }
+  return '00:00 AM'
+}
 </script>
 
 <template>
@@ -180,7 +191,7 @@ const toTime = (seconds: number | undefined) => {
                     <div class="col-12">
                       <h5 class="card-title"><i class="fas fa-stopwatch"></i> <b>ETA:</b></h5>
                     </div>
-                    <div class="col-12">{{ (currentJob?.time?.eta ?? "00:00:00 AM") }}</div>
+                    <div class="col-12">{{ (toDateString(currentJob?.time?.eta) ?? "00:00 AM") }}</div>
                   </div>
                 </div>
               </div>

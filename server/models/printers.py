@@ -273,12 +273,13 @@ class Printer(db.Model):
                     # Send the line to the printer.
                     # time.sleep(1)
                     if (self.getStatus() == "paused" or ("M601" in line) or ("M0" in line)):
-                        self.setStatus("paused", job)
+                        self.setStatus("paused")
                         # set relative positioning mode
                         self.sendGcode("G91", job)
                         self.sendGcode("G1 Z10 F300", job)  # move up 10mm
                         self.sendGcode("M601", job)  # pause command
                         # self.sendGcode("G1 Z-10 F300")
+                        pause_time = time.time()  # get the current time
                         while (True):
                             stat = self.getStatus()
                             if (stat == "printing"):
@@ -287,6 +288,8 @@ class Printer(db.Model):
                                 # set back to absolute positioning
                                 self.sendGcode("G90", job)
                                 break
+                            elif time.time() - pause_time > 1200:  # 20 minutes * 60 seconds
+                                return "paused_too_long"
 
                     # right now, if pause is in the line, M601 will be sent twice to avoid duplicate code.
                     # test to see if thatll be an issue.
@@ -390,6 +393,11 @@ class Printer(db.Model):
                 elif verdict == "cancelled":
                     self.endingSequence()
                     self.disconnect()
+                    self.sendStatusToJob(job, job.id, "cancelled")
+                elif verdict == "paused_too_long":
+                    self.endingSequence()
+                    self.disconnect()
+                    self.setStatus("complete")
                     self.sendStatusToJob(job, job.id, "cancelled")
                 else:
                     self.disconnect()

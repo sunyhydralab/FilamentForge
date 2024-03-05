@@ -25,7 +25,8 @@ export interface Job {
     elapsed?: number
     remaining?: number
     extra?: number
-    eta?: string
+    pause?: number
+    eta?: Date
     timer?: NodeJS.Timeout
   }
 }
@@ -290,7 +291,8 @@ export function setupTimeSocket(printers: any) {
         elapsed: 0,
         remaining: 0,
         extra: 0,
-        eta: "00:00:00",
+        pause: 0,
+        eta: new Date(), // Initialize as a Date object
         timer: null
       }
     }
@@ -300,23 +302,17 @@ export function setupTimeSocket(printers: any) {
     job.time.remaining = total_time
 
     const calculateETA = (totalSeconds: number | undefined) => {
+      const now = new Date()
+
       if (totalSeconds) {
-        // Get the current date
-        const now = new Date();
-
         // Add the total time remaining (in milliseconds)
-        now.setTime(now.getTime() + totalSeconds * 1000);
-
-        // Format the time as a string in 12-hour format with "AM" or "PM"
-        const eta = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-        return eta;
+        now.setTime(now.getTime() + totalSeconds * 1000)
       }
 
-      return "00:00:00 AM";
+      return now
     }
 
-    job.time.eta = calculateETA(total_time)
+    job.time.eta = calculateETA(job.time.total)
 
     // Start a timer for the job
     job.time.timer = setInterval(() => {
@@ -325,13 +321,37 @@ export function setupTimeSocket(printers: any) {
           job.time.elapsed += 1
           if (job.time.elapsed > job.time.total) {
             job.time.extra += 1
+            // Add the extra time to the ETA
+            job.time.eta.setTime(job.time.eta.getTime() + 1000)
           } else {
             job.time.remaining -= 1
           }
+          job.time.pause = 0
           break
         case 'paused':
           job.time.elapsed += 1
           job.time.total += 1
+          job.time.pause += 1
+          // Add the pause time to the ETA
+          job.time.eta.setTime(job.time.eta.getTime() + 1000)
+          // Send warning toasts and cancel the job if paused for too long
+          if (job.time.pause === 600) {
+            // 10 minutes
+            // Send warning toast
+            toast.warning('Job has been paused for 10 minutes!')
+          } else if (job.time.pause === 900) {
+            // 15 minutes
+            // Send warning toast
+            toast.warning('Job has been paused for 15 minutes!')
+          } else if (job.time.pause === 1080) {
+            // 18 minutes
+            // Send warning toast
+            toast.warning('Job has been paused for 18 minutes!')
+          } else if (job.time.pause === 1200) {
+            // 20 minutes
+            // Send error toast and cancel the job
+            toast.error('Job has been paused for 20 minutes! Cancelling job...')
+          }
           break
         case 'cancelled':
         case 'error':
