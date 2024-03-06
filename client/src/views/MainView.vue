@@ -95,28 +95,28 @@ const setCurrent = (printer: Device, job: Job) => {
   }
 }
 
-const toTime = (job: Job, num: number) => {
+const toTime = (job: Job | undefined, num: number) => {
   if (job && job.time) {
     if (num === 1) {
-      const date = new Date(job.time.elapsed * 1000).toISOString().substr(11, 8);
+      const date = new Date((job.time.elapsed ?? 0) * 1000).toISOString().substr(11, 8);
       return date;
     } else if (num === 2) {
-      const date = new Date(job.time.remaining * 1000).toISOString().substr(11, 8);
+      const date = new Date((job.time.remaining ?? 0) * 1000).toISOString().substr(11, 8);
       return date;
     } else if (num === 3) {
-      const date = new Date(job.time.total * 1000).toISOString().substr(11, 8);
+      const date = new Date((job.time.total ?? 0) * 1000).toISOString().substr(11, 8);
       return date;
     } else if (num === 4) {
-      const date = new Date(job.time.extra * 1000).toISOString().substr(11, 8);
+      const date = new Date((job.time.extra ?? 0) * 1000).toISOString().substr(11, 8);
       return date;
     }
   }
   return "00:00:00";
 }
 
-const toDateString = (job: Job) => {
+const toDateString = (job: Job | undefined) => {
   if (job && job.time) {
-    return job.time.eta.toLocaleTimeString('en-US', {
+    return (job.time.eta ?? new Date()).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
