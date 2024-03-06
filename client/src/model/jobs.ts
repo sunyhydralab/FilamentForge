@@ -286,6 +286,7 @@ export function setupTimeSocket(printers: any) {
     }
 
     if (!job.time) {
+      console.log('Initializing time object')
       job.time = {
         total: 0,
         elapsed: 0,
@@ -316,6 +317,12 @@ export function setupTimeSocket(printers: any) {
 
     // Start a timer for the job
     job.time.timer = setInterval(() => {
+      console.log("TOTAL: ", job.time.total)
+      console.log("REMAINING: ", job.time.remaining)
+      console.log("ELAPSED: ", job.time.elapsed)
+      console.log("EXTRA: ", job.time.extra)
+      console.log("PAUSE: ", job.time.pause)
+      console.log("ETA: ", job.time.eta)
       switch (printer.status) {
         case 'printing':
           job.time.elapsed += 1

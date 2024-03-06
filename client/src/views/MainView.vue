@@ -60,9 +60,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   // Clear the interval when the component is unmounted to prevent memory leaks
-  if (intervalId) {
-    clearInterval(intervalId)
-  }
+  // if (intervalId) {
+  //   clearInterval(intervalId)
+  // }
 })
 
 const sendToQueueView = (name: string | undefined) => {
@@ -95,17 +95,28 @@ const setCurrent = (printer: Device, job: Job) => {
   }
 }
 
-const toTime = (seconds: number | undefined) => {
-  if (seconds) {
-    const date = new Date(seconds * 1000).toISOString().substr(11, 8);
-    return date;
+const toTime = (job: Job, num: number) => {
+  if (job && job.time) {
+    if (num === 1) {
+      const date = new Date(job.time.elapsed * 1000).toISOString().substr(11, 8);
+      return date;
+    } else if (num === 2) {
+      const date = new Date(job.time.remaining * 1000).toISOString().substr(11, 8);
+      return date;
+    } else if (num === 3) {
+      const date = new Date(job.time.total * 1000).toISOString().substr(11, 8);
+      return date;
+    } else if (num === 4) {
+      const date = new Date(job.time.extra * 1000).toISOString().substr(11, 8);
+      return date;
+    }
   }
   return "00:00:00";
 }
 
-const toDateString = (date: Date | undefined) => {
-  if (date) {
-    return date.toLocaleTimeString('en-US', {
+const toDateString = (job: Job) => {
+  if (job && job.time) {
+    return job.time.eta.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
@@ -149,7 +160,7 @@ const toDateString = (date: Date | undefined) => {
                     <div class="col-12">
                       <h5 class="card-title"><i class="fas fa-hourglass-half"></i> <b>Elapsed Time:</b></h5>
                     </div>
-                    <div class="col-12">{{ toTime(currentJob?.time?.elapsed) }}</div>
+                    <div class="col-12">{{ toTime(currentJob, 1) }}</div>
                   </div>
                 </div>
               </div>
@@ -161,7 +172,7 @@ const toDateString = (date: Date | undefined) => {
                     <div class="col-12">
                       <h5 class="card-title"><i class="fas fa-hourglass-end"></i> <b>Remaining Time:</b></h5>
                     </div>
-                    <div class="col-12">{{ toTime(currentJob?.time?.remaining) }}</div>
+                    <div class="col-12">{{ toTime(currentJob, 2) }}</div>
                   </div>
                 </div>
               </div>
@@ -176,8 +187,8 @@ const toDateString = (date: Date | undefined) => {
                     <div class="col-12">
                       {{
             currentJob?.time?.extra && currentJob.time.extra > 0
-              ? toTime(currentJob.time.total) + ' + ' + toTime(currentJob.time.extra)
-              : toTime(currentJob?.time?.total)
+              ? toTime(currentJob, 3) + ' + ' + toTime(currentJob, 4)
+              : toTime(currentJob, 3)
           }}
                     </div>
                   </div>
@@ -191,7 +202,7 @@ const toDateString = (date: Date | undefined) => {
                     <div class="col-12">
                       <h5 class="card-title"><i class="fas fa-stopwatch"></i> <b>ETA:</b></h5>
                     </div>
-                    <div class="col-12">{{ (toDateString(currentJob?.time?.eta) ?? "00:00 AM") }}</div>
+                    <div class="col-12">{{ (toDateString(currentJob) ?? "00:00 AM") }}</div>
                   </div>
                 </div>
               </div>
