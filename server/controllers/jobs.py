@@ -283,6 +283,26 @@ def getFile():
         print(f"Unexpected error: {e}")
         return jsonify({"error": "Unexpected error occurred"}), 500
     
+@jobs_bp.route('/nullifyjobs', methods=["POST"])
+def nullifyJobs():
+    try: 
+        data = request.get_json()
+        printerid = data['printerid']
+        res = Job.nullifyPrinterId(printerid)
+        return res 
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "Unexpected error occurred"}), 500
+    
+@jobs_bp.route('/clearspace', methods=["GET"])
+def clearSpace(): 
+    try: 
+        res = Job.clearSpace()
+        return res 
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "Unexpected error occurred"}), 500
+    
 def findPrinterObject(printer_id): 
     threads = printer_status_service.getThreadArray()
     return list(filter(lambda thread: thread.printer.id == printer_id, threads))[0].printer  

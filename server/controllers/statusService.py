@@ -46,3 +46,27 @@ def queueRestore():
         print(f"Unexpected error: {e}")
         return jsonify({"error": "Unexpected error occurred"}), 500
     
+@status_bp.route("/removethread", methods=["POST"])
+def removeThread():
+    try:
+        data = request.get_json() # get json data
+        printerid = data['printerid']
+        res = printer_status_service.deleteThread(printerid)
+        return res 
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "Unexpected error occurred"}), 500
+    
+@status_bp.route("/editNameInThread", methods=["POST"])
+def editName(): 
+    try: 
+        data = request.get_json() 
+        printerid = data['printerid']
+        name = data['newname']
+        print(name)
+        res = printer_status_service.editName(printerid, name)
+        return res 
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "Unexpected error occurred"}), 500
+    

@@ -6,6 +6,7 @@ from flask_cors import cross_origin
 from sqlalchemy.exc import SQLAlchemyError
 from flask import Blueprint, jsonify, request, make_response
 from models.printers import Printer
+# from models.jobs import Job
 # from models.PrinterStatusService import PrinterStatusService
 # from app import printer_status_service
 
@@ -38,19 +39,18 @@ def registerPrinter():
         name = data['printer']['name']
         
         res = Printer.create_printer(device=device, description=description, hwid=hwid, name=name, status='ready')
-        id = res['printer_id']
-        
-        print(id)
-        
-        thread_data = {
-            "id": id, 
-            "device": device,
-            "description": description,
-            "hwid": hwid,
-            "name": name
-        }
-        
-        printer_status_service.create_printer_threads([thread_data])
+        if(res["success"] == True):
+            id = res['printer_id']
+                    
+            thread_data = {
+                "id": id, 
+                "device": device,
+                "description": description,
+                "hwid": hwid,
+                "name": name
+            }
+            
+            printer_status_service.create_printer_threads([thread_data])
         
         return res
     
@@ -58,20 +58,38 @@ def registerPrinter():
         print(f"Unexpected error: {e}")
         return jsonify({"error": "Unexpected error occurred"}), 500
 
-        
-# method to get the queue for a printer
-# unsure if this works tbh, need help!
-# @ports_bp.route("/getqueue", methods=["GET"])
-# def getQueue(printer_name):
-#     try:
-#         # Query the database to find the printer by name
-#         printer = Printer.query.get(printer_name)
-#         if printer is None:
-#             return jsonify({'error': 'Printer not found'}), 404
-#         queue = printer.queue.getQueue()
-#         return jsonify({'queue': queue}), 200
-
-#     except SQLAlchemyError as e:
-#         print(f"Database error: {e}")
-#         return jsonify({"error": "Failed to retrieve queue. Database error"}), 500
+@ports_bp.route("/deleteprinter", methods=["POST"])
+def delete_printer():
+    try: 
+        data = request.get_json()
+        printerid = data['printerid']
+        # res = printer_status_service.deleteThread(printerid)
+        res = Printer.deletePrinter(printerid)
+        return res 
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "Unexpected error occurred"}), 500
+    
+@ports_bp.route("/editname", methods=["POST"])
+def edit_name(): 
+    try: 
+        data = request.get_json() 
+        printerid = data['printerid']
+        name = data['name']
+        res = Printer.editName(printerid, name)
+        return res 
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "Unexpected error occurred"}), 500
+    
+@ports_bp.route("/diagnose", methods=["POST"])
+def diagnose_printer():
+    try:
+        data = request.get_json() 
+        device = data['device']
+        res = Printer.diagnosePrinter(device)
+        return res
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "Unexpected error occurred"}), 500
     

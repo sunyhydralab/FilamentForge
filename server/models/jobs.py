@@ -2,8 +2,8 @@ import asyncio
 import base64
 import os
 import re
-from models.db import db
-from datetime import datetime, timezone
+from models.db import db 
+from datetime import datetime, timezone, timedelta 
 from sqlalchemy import Column, String, LargeBinary, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from flask import jsonify, current_app
@@ -20,14 +20,12 @@ from app import printer_status_service
 
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    file = db.Column(db.LargeBinary(16777215), nullable=False)
-    name = db.Column(db.String(50), nullable=False)
+    file = db.Column(db.LargeBinary(16777215), nullable=True)
+    name = db.Column(db.String(50), nullable = False)
     status = db.Column(db.String(50), nullable=False)
-    date = db.Column(db.DateTime, default=lambda: datetime.now(
-        timezone.utc).astimezone(), nullable=False)
-    # foreign key relationship to match jobs to the printer printed on
-    printer_id = db.Column(db.Integer, db.ForeignKey(
-        'printer.id'), nullable=False)
+    date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).astimezone(), nullable=False)
+    # foreign key relationship to match jobs to the printer printed on 
+    printer_id = db.Column(db.Integer, db.ForeignKey('printer.id'), nullable = True)
     printer = db.relationship('Printer', backref='Job')
     file_name_original = db.Column(db.String(50), nullable=False)
     file_name_pk = None
@@ -71,10 +69,10 @@ class Job(db.Model):
 
             jobs_data = [{
                 "id": job.id,
-                "name": job.name,
-                "status": job.status,
-                "date": f"{job.date.strftime('%a, %d %b %Y %H:%M:%S')} {get_localzone().tzname(job.date)}",
-                "printer": job.printer.name,
+                "name": job.name, 
+                "status": job.status, 
+                "date": f"{job.date.strftime('%a, %d %b %Y %H:%M:%S')} {get_localzone().tzname(job.date)}",  
+                "printer": job.printer.name if job.printer else 'None', 
                 "file_name_original": job.file_name_original
             } for job in jobs]
 
@@ -158,17 +156,24 @@ class Job(db.Model):
     @classmethod
     def queueRestore(cls, printer_id):
         try:
-            jobs = cls.query.filter_by(
-                printer_id=printer_id, status='inqueue').all()
+            jobs = cls.query.filter_by(printer_id=printer_id, status='inqueue').all()
+            printingJob = cls.query.filter_by(printer_id=printer_id, status='printing').all()
+            for job in printingJob: 
+                cls.update_job_status(job.id, 'inqueue')
+                jobs.append(job)
+            
             for job in jobs:
-                base_name, extension = os.path.splitext(job.file_name_original)
-                # Append the ID to the base name
-                file_name_pk = f"{base_name}_{id}{extension}"
-                job.setFileName(file_name_pk)  # set unique file name
-                # print(type(job.file))
-                cls.findPrinterObject(
-                    printer_id).getQueue().addToBack(job, printer_id)
-
+                if(job.file!=None):
+                    base_name, extension = os.path.splitext(job.file_name_original)
+                    # Append the ID to the base name
+                    file_name_pk = f"{base_name}_{job.id}{extension}"
+                    job.setFileName(file_name_pk) # set unique file name    
+                    
+                    print(file_name_pk)             
+                    # print(type(job.file))
+                    queue = cls.findPrinterObject(printer_id).getQueue()
+                    if not queue.jobExists(job.id) and job.file is not None:
+                        queue.addToBack(job, printer_id)
             return {"success": True, "message": "Queue restored successfully."}
         except SQLAlchemyError as e:
             print(f"Database error: {e}")
@@ -187,7 +192,39 @@ class Job(db.Model):
     @classmethod
     def getPathForDelete(cls, file_name):
         return os.path.join('../uploads', file_name)
-
+    
+    @classmethod 
+    def nullifyPrinterId(cls, printer_id):
+        try:
+            jobs = cls.query.filter_by(printer_id=printer_id).all()
+            for job in jobs:
+                job.printer_id = 0
+            db.session.commit()
+            return {"success": True, "message": "Printer ID nullified successfully."}
+        except SQLAlchemyError as e:
+            print(f"Database error: {e}")
+            return jsonify({"error": "Failed to nullify printer ID. Database error"}), 500
+        
+    @classmethod
+    def clearSpace(cls): 
+        try:
+            six_months_ago = datetime.now() - timedelta(days=182)  # 6 months ago
+            old_jobs = Job.query.filter(Job.date < six_months_ago).all()
+            
+            # thirty_seconds_ago = datetime.now() - timedelta(seconds=30)  # 30 seconds ago
+            # old_jobs = Job.query.filter(Job.date < thirty_seconds_ago).all()
+            
+            for job in old_jobs:
+                job.file = None  # Set file to None
+                if "Removed after 6 months" not in job.file_name_original:
+                    job.file_name_original = f"{job.file_name_original}: Removed after 6 months"
+            db.session.commit()  # Commit the changes
+            return {"success": True, "message": "Space cleared successfully."}
+        except SQLAlchemyError as e:
+            print(f"Database error: {e}")
+            return jsonify({"error": "Failed to clear space. Database error"}), 500
+    
+           
     def saveToFolder(self):
         file_data = self.getFile()
         decompressed_data = gzip.decompress(file_data)
@@ -251,8 +288,7 @@ class Job(db.Model):
         else:
             # search for the line that contains "printing time", then the time estimate is in the format of "; estimated printing time (normal mode) = minutes seconds"
             time_line = next(line for line in comment_lines if "time" in line)
-            time_minutes, time_seconds = map(
-                int, re.findall(r'\d+', time_line))
+            time_minutes, time_seconds = map(int, re.findall(r'\d+', time_line))
             time_seconds += time_minutes * 60
         return time_seconds
 

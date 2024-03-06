@@ -227,6 +227,32 @@ export function useGetJobFile() {
   }
 }
 
+export function useClearSpace(){
+  return {
+    async clearSpace(){
+      try {
+        const response = await api('clearspace')
+        if (response) {
+          if (response.success == false) {
+            toast.error(response.message)
+          } else if (response.success === true) {
+            toast.success(response.message)
+          } else {
+            console.error('Unexpected response:', response)
+            toast.error('Failed to clear space. Unexpected response.')
+          }
+        } else {
+          console.error('Response is undefined or null')
+          toast.error('Failed to clear space. Unexpected response')
+        }
+        return response
+      } catch (error) {
+        console.error(error)
+      }
+    }
+  }
+}
+
 // function to constantly update progress of job
 export function setupProgressSocket(printers: any) {
   // Always set up the socket connection and event listener

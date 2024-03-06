@@ -69,26 +69,27 @@ class Printer(db.Model):
 
     @classmethod
     def create_printer(cls, device, description, hwid, name, status):
-        printerExists = cls.searchByDevice(hwid)
-        # if printerExists:
-        #     return {"success": False, "message": "Printer already registered."}
-        # else:
         try:
-            printer = cls(
-                device=device,
-                description=description,
-                hwid=hwid,
-                name=name,
-                status=status,
-            )
-            db.session.add(printer)
-            db.session.commit()
-            return {"success": True, "message": "Printer successfully registered.", "printer_id": printer.id}
+            printerExists = cls.searchByDevice(hwid)
+            if printerExists:
+                printer = cls.query.filter_by(hwid=hwid).first()
+                return {"success": False, "message": f"Port already registered under hwid: {printer.name}."}
+            else:
+                printer = cls(
+                    device=device,
+                    description=description,
+                    hwid=hwid,
+                    name=name,
+                    status=status,
+                )
+                db.session.add(printer)
+                db.session.commit()
+                return {"success": True, "message": "Printer successfully registered.", "printer_id": printer.id}
         except SQLAlchemyError as e:
             print(f"Database error: {e}")
             return (
                 jsonify({"error": "Failed to register printer. Database error"}),
-                500,
+                    500,
             )
 
     @classmethod
@@ -131,12 +132,33 @@ class Printer(db.Model):
                 'description': port.description,
                 'hwid': port.hwid,
             }
-            supportedPrinters = ["Original Prusa i3 MK3", "Makerbot"]
+            # supportedPrinters = ["Original Prusa i3 MK3", "Makerbot"]
             # if port.description in supportedPrinters:
             printerList.append(port_info)
         return printerList
+    
+    @classmethod 
+    def diagnosePrinter(cls, deviceToDiagnose): # deviceToDiagnose = port 
+        try: 
+            diagnoseString = ''
+            ports = serial.tools.list_ports.comports()
+            for port in ports: 
+                if port.device == deviceToDiagnose:
+                    diagnoseString += f"The system has found a matching port with the following details: <br><br> Device: {port.device}, <br> Description: {port.description}, <br> HWID: {port.hwid}<br><br>"
+                    printerExists = cls.searchByDevice(port.hwid)
+                    if(printerExists):
+                        printer = cls.query.filter_by(hwid=port.hwid).first()
+                        diagnoseString += f"Device {port.device} is registered with the following details: <br><br> Name: {printer.name} <br> Device: {printer.device}, <br> Description: {printer.description}, <br> HWID: {printer.hwid}<br><br>"
+            if diagnoseString == '':
+                diagnoseString = "The port this printer is registered under is not found. Please check the connection and try again."
+            # return diagnoseString
+            return {"success": True, "message": "Printer successfully diagnosed.", "diagnoseString": diagnoseString}
 
-    @classmethod
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return jsonify({"error": "Unexpected error occurred"}), 500
+                
+    @classmethod 
     def findPrinter(cls, id):
         try:
             printer = cls.query.get(id)
@@ -147,10 +169,42 @@ class Printer(db.Model):
                 jsonify({"error": "Failed to retrieve printer. Database error"}),
                 500,
             )
+            
+    @classmethod 
+    def deletePrinter(cls, printerid):
+        try:   
+            printer = cls.query.get(printerid)
+            db.session.delete(printer)
+            db.session.commit()
+            return {"success": True, "message": "Printer successfully deleted."}
+        except SQLAlchemyError as e:
+            print(f"Database error: {e}")
+            return (
+                jsonify({"error": "Failed to delete printer. Database error"}),
+                500,
+            )
+            
+    @classmethod
+    def editName(cls, printerid, name):
+        try:
+            printer = cls.query.get(printerid)
+            printer.name = name
+            db.session.commit()
+            return {"success": True, "message": "Printer name successfully updated."}
+        except SQLAlchemyError as e:
+            print(f"Database error: {e}")
+            return (
+                jsonify({"error": "Failed to update printer name. Database error"}),
+                500,
+            )
 
     def connect(self):
-        self.ser = serial.Serial(self.device, 115200, timeout=1)
-        self.ser.write(f"M155 S5\n".encode("utf-8"))
+        try: 
+            self.ser = serial.Serial(self.device, 115200, timeout=1)
+            self.ser.write(f"M155 S5\n".encode("utf-8"))
+        except Exception as e: 
+            self.setError(e)
+            return "error"
 
     def disconnect(self):
         if self.ser:
@@ -171,6 +225,7 @@ class Printer(db.Model):
             # time.sleep(0.1)
             # Save and print out the response from the printer. We can use this for error handling and status updates.
             while True:
+                print("in send")
                 # logic here about time elapsed since last response
                 response = self.ser.readline().decode("utf-8").strip()
 
@@ -221,14 +276,23 @@ class Printer(db.Model):
             while True:
                 # logic here about time elapsed since last response
                 response = self.ser.readline().decode("utf-8").strip()
-                # if response == "":
-                #     self.responseCount+=1
-                #     if(self.responseCount>=10):
-                #         raise TimeoutError("No response from printer")
-                stat = self.getStatus()
-                # print(stat)
-                if stat != "complete":
+                
+                if response == "":
+                    self.responseCount+=1 
+                    if(self.responseCount>=10):
+                        self.setError("No response from printer")
+                        raise Exception("No response from printer")
+                elif "error" in response.lower():
+                    self.setError(response)
                     break
+                else:
+                    self.responseCount = 0
+                    
+                stat = self.getStatus()
+                
+                if stat != "complete":
+                    break 
+                
                 if "ok" in response:
                     break
                 print(f"Command: {message}, Received: {response}")
@@ -242,6 +306,7 @@ class Printer(db.Model):
         try:
             with open(path, "r") as g:
                 # Read the file and store the lines in a list
+
                 lines = g.readlines()
 
                 #  Time handling
@@ -312,10 +377,8 @@ class Printer(db.Model):
 
                     # Call the setProgress method
                     job.setProgress(progress)
-
-                    # if res == "error":
-                    #     return "error"
-
+                    
+                    
                     if self.getStatus() == "complete":
                         return "cancelled"
 
@@ -332,17 +395,17 @@ class Printer(db.Model):
     def endingSequence(self):
         try:
             # *** Ender 3 Pro ending sequence ***
-            # self.gcodeEnding("G91")  # Relative positioning
-            # self.gcodeEnding("G1 E-2 F2700")  # Retract a bit
-            # self.gcodeEnding("G1 E-2 Z0.2 F2400")  # Retract and raise Z
-            # self.gcodeEnding("G1 X5 Y5 F3000")  # Wipe out
-            # self.gcodeEnding("G1 Z10")  # Raise Z more
-            # self.gcodeEnding("G90")  # Absolute positioning
-            # self.gcodeEnding("G1 X0 Y220")  # Present print
-            # self.gcodeEnding("M106 S0")  # Turn-off fan
-            # self.gcodeEnding("M104 S0")  # Turn-off hotend
-            # self.gcodeEnding("M140 S0")  # Turn-off bed
-            # self.gcodeEnding("M84 X Y E")  # Disable all steppers but Z
+            self.gcodeEnding("G91")  # Relative positioning
+            self.gcodeEnding("G1 E-2 F2700")  # Retract a bit
+            self.gcodeEnding("G1 E-2 Z0.2 F2400")  # Retract and raise Z
+            self.gcodeEnding("G1 X5 Y5 F3000")  # Wipe out
+            self.gcodeEnding("G1 Z10")  # Raise Z more
+            self.gcodeEnding("G90")  # Absolute positioning
+            self.gcodeEnding("G1 X0 Y220")  # Present print
+            self.gcodeEnding("M106 S0")  # Turn-off fan
+            self.gcodeEnding("M104 S0")  # Turn-off hotend
+            self.gcodeEnding("M140 S0")  # Turn-off bed
+            self.gcodeEnding("M84 X Y E")  # Disable all steppers but Z
 
             # *** Prusa i3 MK3 ending sequence ***
             # self.gcodeEnding("M104 S0") # turn off extruder
@@ -355,27 +418,16 @@ class Printer(db.Model):
             # self.gcodeEnding("M84") # disable motors
 
             # *** Prusa MK4 ending sequence ***
-            # {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+1, max_print_height)} F720 ; Move print head up{endif}
-            # M104 S0 ; turn off temperature
-            # M140 S0 ; turn off heatbed
-            # M107 ; turn off fan
-            # G1 X241 Y170 F3600 ; park
-            # {if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+23, max_print_height)} F300 ; Move print head up{endif}
-            # G4 ; wait
-            # M900 K0 ; reset LA
-            # M142 S36 ; reset heatbreak target temp
-            # M84 X Y E ; disable motors
-            # ; max_layer_z = [max_layer_z]
-            self.gcodeEnding("{if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+1, max_print_height)} F720 {endif}") # Move print head up
-            self.gcodeEnding("M104 S0") # turn off temperature
-            self.gcodeEnding("M140 S0") # turn off heatbed
-            self.gcodeEnding("M107") # turn off fan
-            self.gcodeEnding("G1 X241 Y170 F3600") # park
-            self.gcodeEnding("{if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+23, max_print_height)} F300 {endif}") # Move print head up
-            self.gcodeEnding("G4") # wait
-            self.gcodeEnding("M900 K0") # reset LA
-            self.gcodeEnding("M142 S36") # reset heatbreak target temp
-            self.gcodeEnding("M84 X Y E") # disable motors
+            # self.gcodeEnding("{if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+1, max_print_height)} F720 {endif}") # Move print head up
+            # self.gcodeEnding("M104 S0") # turn off temperature
+            # self.gcodeEnding("M140 S0") # turn off heatbed
+            # self.gcodeEnding("M107") # turn off fan
+            # self.gcodeEnding("G1 X241 Y170 F3600") # park
+            # self.gcodeEnding("{if layer_z < max_print_height}G1 Z{z_offset+min(layer_z+23, max_print_height)} F300 {endif}") # Move print head up
+            # self.gcodeEnding("G4") # wait
+            # self.gcodeEnding("M900 K0") # reset LA
+            # self.gcodeEnding("M142 S36") # reset heatbreak target temp
+            # self.gcodeEnding("M84 X Y E") # disable motors
 
         except Exception as e:
             self.setError(e)
@@ -391,12 +443,10 @@ class Printer(db.Model):
 
                 self.setStatus("printing")  # set printer status to printing
                 self.sendStatusToJob(job, job.id, "printing")
-                # self.reset()
-                # now we pass the job to the parseGcode function, so we can find that jobs progress
-                # passes file to code. returns "complete" if successful, "error" if not.
-                verdict = self.parseGcode(path, job)
 
-                if verdict == "complete":
+                verdict = self.parseGcode(path, job) # passes file to code. returns "complete" if successful, "error" if not.
+                
+                if verdict =="complete":
                     self.disconnect()
                     self.setStatus("complete")
                     self.sendStatusToJob(job, job.id, "complete")
@@ -421,15 +471,12 @@ class Printer(db.Model):
                 job.removeFileFromPath(path)
             # WHEN THE USER CLEARS THE JOB: remove job from queue, set printer status to ready.
             else:
-                print("exception in else of verdict")
                 self.getQueue().deleteJob(job.id, self.id)
                 # self.setStatus("error")
                 self.setError("Printer not connected")
                 self.sendStatusToJob(job, job.id, "error")
-
-            return
+            return     
         except Exception as e:
-            print(e)
             # print("exception in printNextInQueue except")
             self.getQueue().deleteJob(job.id, self.id)
             # self.setStatus("error")
@@ -473,9 +520,7 @@ class Printer(db.Model):
     #  now when we set the status, we can emit the status to the frontend
     def setStatus(self, newStatus):
         try:
-            print("setting status")
-            self.status = newStatus
-
+            self.status = newStatus 
             # print(self.status)
             # Emit a 'status_update' event with the new status
             current_app.socketio.emit(
@@ -487,9 +532,7 @@ class Printer(db.Model):
         self.stopPrint = stopPrint
 
     def setError(self, error):
-        # print("in seterror")
-        self.error = str(error)
-        print(self.id)
+        self.error = str(error) 
         self.setStatus("error")
         current_app.socketio.emit(
             'error_update', {'printerid': self.id, 'error': self.error})

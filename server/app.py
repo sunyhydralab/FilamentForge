@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 from controllers.ports import getRegisteredPrinters
 import shutil
 from flask_socketio import SocketIO
-
+from datetime import datetime, timedelta
+from sqlalchemy import text
 # moved this up here so we can pass the app to the PrinterStatusService
 # Basic app setup 
 app = Flask(__name__)
@@ -56,11 +57,9 @@ app.register_blueprint(ports_bp)
 app.register_blueprint(jobs_bp)
 app.register_blueprint(status_bp)
 
-# on server start, create a Printer object for each printer in the database and assign it to its 
 # own thread
 with app.app_context():
     try:
-        
         # Creating printer threads from registered printers on server start 
         res = getRegisteredPrinters() # gets registered printers from DB 
         data = res[0].get_json() # converts to JSON 
@@ -78,19 +77,10 @@ with app.app_context():
         else:
             # Create the uploads folder if it doesn't exist
             os.makedirs(uploads_folder)
-            print("Uploads folder created successfully.")
-        
-            
+            print("Uploads folder created successfully.")  
     except Exception as e:
         print(f"Unexpected error: {e}")
-        
-    """
-        User should be able to queue a job to a specific printer. Frontend selection -> backend thread -> PrinterInstance.getQueue().addToFront
-        
-        Also continuously ping specific printer for status 
-        
-    """
-        
+            
 
 if __name__ == "__main__":
     # If hits last line in GCode file: 
