@@ -142,7 +142,7 @@ const clearMessage = () => {
 
         <div class="form-container">
             <b class="register">REGISTER PRINTERS</b>
-            <form methods="POST" @submit="doRegister">
+            <form methods="POST" @submit.prevent="doRegister">
                 <select name="ports" id="ports" v-model="selectedDevice" required>
                     <option disabled value="null">Select Device</option> <!-- Default option -->
                     <option v-for="printer in devices" :value="printer">

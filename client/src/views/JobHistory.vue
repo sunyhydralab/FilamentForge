@@ -2,8 +2,6 @@
 import { useRetrievePrintersInfo, type Device } from '../model/ports'
 import { useGetJobs, type Job, useRerunJob, useGetJobFile, useClearSpace } from '@/model/jobs';
 import { computed, onMounted, ref, watch } from 'vue';
-// import { useGetJobs, type Job } from '@/model/jobs';
-// import { computed, onMounted, ref } from 'vue';
 const { jobhistory } = useGetJobs()
 const { retrieveInfo } = useRetrievePrintersInfo()
 const { rerunJob } = useRerunJob()
@@ -67,14 +65,6 @@ const handleRerun = async (job: Job, printer: Device) => {
     }
 }
 
-// watch(pageSize, async (newPageSize) => {
-//     jobs.value = []; // Clear the jobs array
-//     // Fetch the updated list of jobs after changing the page size
-//     const [joblist, total] = await jobhistory(page.value, newPageSize)
-//     jobs.value = joblist;
-//     totalJobs.value = total;
-// })
-
 const changePage = async (newPage: any) => {
     // Prevent the user from going to a page that doesn't exist
     if (newPage < 1 || newPage > Math.ceil(totalJobs.value / pageSize.value)) {
@@ -98,16 +88,6 @@ function appendPrinter(printer: Device) {
         selectedPrinters.value = selectedPrinters.value.filter(p => p !== printer)
     }
 }
-
-// watch(oldestFirst, async (newVal, oldVal) => {
-//     if (newVal !== oldVal) {
-//         // If the sorting order has changed, fetch the jobs for the current page again
-//         const printerIds = selectedPrinters.value.map(p => p.id).filter(id => id !== undefined) as number[];
-//         const [joblist, total] = await jobhistory(page.value, pageSize.value, printerIds, oldestFirst.value)
-//         jobs.value = joblist;
-//         totalJobs.value = total;
-//     }
-// });
 
 async function submitFilter() {
     jobs.value = []; // Clear the jobs array
@@ -134,9 +114,12 @@ async function submitFilter() {
     jobs.value = joblist;
 }
 
-const clear = async () => {
+async function clear () {
     await clearSpace()
-    console.log("Clearing space")
+    // Fetch the updated list of jobs after clearing the space
+    // might need a fix here
+    submitFilter()
+
 }
 </script>
 
@@ -146,14 +129,18 @@ const clear = async () => {
         <div class="container-fluid mb-2 p-2 border rounded">
             <div class="row justify-content-center">
 
-            <div class="col-md-3 d-flex align-items-center">
-                <label for="pageSize" class="form-label my-auto" style="white-space: nowrap;">Jobs per page:</label>
-                <input id="pageSize" type="number" v-model.number="pageSize" min="1" class="form-control mx-2 my-auto"> 
-                <label class="my-auto">/&nbsp;{{ totalJobs }}</label>
-            </div>
+                <div class="col d-flex align-items-center justify-content-between">
+                    <label for="pageSize" class="form-label my-auto" style="white-space: nowrap;">Jobs per page:</label>
+                    <input id="pageSize" type="number" v-model.number="pageSize" min="1"
+                        class="form-control mx-2 my-auto">
+                    <label class="my-auto">/&nbsp;{{ totalJobs }}</label>
+                </div>
 
-                <div class="col-md-3">
-                    <label class="form-label">Device:</label>
+                <div class="col d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <label class="form-label">Device:</label>
+                        <div style="width: 10px;"></div> <!-- This div will create a white space -->
+                    </div>
                     <div class="dropdown w-100">
                         <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="dropdownMenuButton"
                             data-bs-toggle="dropdown" aria-expanded="false">
@@ -173,23 +160,30 @@ const clear = async () => {
                     </div>
                 </div>
 
-                <div class="col-md-3">
-                    <label class="form-label">Order:</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="order" id="orderNewest" value="newest"
-                            v-model="order">
-                        <label class="form-check-label" for="orderNewest">
-                            Newest to Oldest
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="order" id="orderOldest" value="oldest"
-                            v-model="order">
-                        <label class="form-check-label" for="orderOldest">
-                            Oldest to Newest
-                        </label>
+                <div class="col d-flex align-items-center">
+                    <label class="form-label d-flex align-items-center">Order:</label>
+                    <div style="padding-left: 1rem;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="order" id="orderNewest" value="newest"
+                                v-model="order">
+                            <label class="form-check-label" for="orderNewest">
+                                Newest to Oldest
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="order" id="orderOldest" value="oldest"
+                                v-model="order">
+                            <label class="form-check-label" for="orderOldest">
+                                Oldest to Newest
+                            </label>
+                        </div>
                     </div>
                 </div>
+
+                <div class="col d-flex align-items-center justify-content-between">
+                    <button @click="clear" class="btn btn-danger w-100">Clear Space</button>
+                </div>
+                
             </div>
         </div>
 
@@ -214,7 +208,7 @@ const clear = async () => {
                     <td>{{ job.name }}</td>
                     <td>
                         {{ job.file_name_original }}
-                        <button class="btn btn-secondary download" @click="getFile(job.id)">
+                        <button class="btn btn-secondary download" @click="getFile(job.id)" :disabled="job.file_name_original.includes('.gcode:')">
                             <i class="fas fa-download"></i>
                         </button>
                     </td>
@@ -224,7 +218,7 @@ const clear = async () => {
                     <td>
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="printerDropdown"
-                                data-bs-toggle="dropdown" aria-expanded="false">
+                                data-bs-toggle="dropdown" aria-expanded="false" :disabled="job.file_name_original.includes('.gcode:')">
                                 Rerun Job
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="printerDropdown">
@@ -256,10 +250,9 @@ const clear = async () => {
                 </li>
             </ul>
         </nav>
-        <button @click="clearSpace">Clear space</button>
     </div>
 </template>
-  
+
 <style scoped>
 table {
     width: 100%;
@@ -292,8 +285,10 @@ th {
 
 .col-date {
     width: 26vh;
-    overflow-x: auto;  /* Add a horizontal scrollbar if necessary */
-    white-space: nowrap;  /* Prevent the content from wrapping to the next line */
+    overflow-x: auto;
+    /* Add a horizontal scrollbar if necessary */
+    white-space: nowrap;
+    /* Prevent the content from wrapping to the next line */
 }
 
 .col-status {
@@ -312,7 +307,8 @@ ul.dropdown-menu.w-100.show li {
     margin-left: 1rem;
 }
 
-.form-check-input:focus, .form-control:focus {
+.form-check-input:focus,
+.form-control:focus {
     outline: none;
     box-shadow: none;
     border-color: #dee2e6;

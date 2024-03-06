@@ -322,7 +322,7 @@ export function setupStatusSocket(printers: any) {
     } else {
       console.error('printers or printers.value is undefined')
     }
-  })
+  }))
 }
 
 export function setupQueueSocket(printers: any) {
@@ -351,7 +351,7 @@ export function setupErrorSocket(printers: any) {
     } else {
       console.error('printers or printers.value is undefined')
     }
-  })
+  }))
   console.log('queue socket set up')
 }
 
