@@ -104,7 +104,7 @@ const handleDragEnd = async (evt: any) => {
             :aria-controls="'panelsStayOpen-collapse' + index">
             <b>{{ printer.name }}:&nbsp;
               <span class="status-text" :style="{ color: statusColor(printer.status) }">{{
-                capitalizeFirstLetter(printer.status) }}</span>
+              capitalizeFirstLetter(printer.status) }}</span>
             </b>
           </button>
         </h2>
@@ -130,52 +130,51 @@ const handleDragEnd = async (evt: any) => {
               <draggable v-model="printer.queue" tag="transition-group" :animation="200" item-key="job.id"
                 handle=".handle" dragClass="hidden-ghost" :onEnd="handleDragEnd"
                 v-if="printer.queue && printer.queue.length">
-                  <template #item="{ element: job }">
-                    <tr :id="job.id.toString()" :data-printer-id="printer.id" :data-job-id="job.id">
-                      <td>{{ job.id }}</td>
-                      <td class="text-center">
-                        <button v-if="job.status == 'inqueue'" type="button" class="btn btn-danger w-100"
-                          data-bs-toggle="modal" data-bs-target="#exampleModal"
-                          @click="handleCancel(job, printer)">X</button>
-                        <button v-else>
-                          <RouterLink to="/">Goto release</RouterLink>
+                <template #item="{ element: job }">
+                  <tr :id="job.id.toString()" :data-printer-id="printer.id" :data-job-id="job.id">
+                    <td>{{ job.id }}</td>
+                    <td class="text-center">
+                      <button v-if="job.status == 'inqueue'" type="button" class="btn btn-danger w-100"
+                        data-bs-toggle="modal" data-bs-target="#exampleModal"
+                        @click="handleCancel(job, printer)">X</button>
+                      <button v-else>
+                        <RouterLink to="/">Goto release</RouterLink>
+                      </button>
+                    </td>
+
+                    <td class="text-center">
+                      <div class="btn-group w-100">
+                        <button type="button" class="btn btn-primary" @click="handleRerun(job, printer)">Rerun
+                          Job</button>
+                        <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                          data-bs-toggle="dropdown" aria-expanded="false">
+                          <span class="visually-hidden">Toggle Dropdown</span>
                         </button>
-                      </td>
-
-                      <td class="text-center">
-                        <div class="btn-group w-100">
-                          <button type="button" class="btn btn-primary" @click="handleRerun(job, printer)">Rerun
-                            Job</button>
-                          <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <span class="visually-hidden">Toggle Dropdown</span>
-                          </button>
-                          <div class="dropdown-menu">
-                            <button class="dropdown-item"
-                              v-for="otherPrinter in printers.filter(p => p.id !== printer.id)" :key="otherPrinter.id"
-                              @click="handleRerun(job, otherPrinter)">{{ otherPrinter.name
-                              }}</button>
-                          </div>
+                        <div class="dropdown-menu">
+                          <button class="dropdown-item"
+                            v-for="otherPrinter in printers.filter(p => p.id !== printer.id)" :key="otherPrinter.id"
+                            @click="handleRerun(job, otherPrinter)">{{ otherPrinter.name
+                            }}</button>
                         </div>
-                      </td>
+                      </div>
+                    </td>
 
-                      <td class="text-center">
-                        <b>
-                          {{ printer.queue ? printer.queue.findIndex(j => j === job) + 1 : '' }}
-                        </b>
-                      </td>
-                      <td><b>{{ job.name }}</b></td>
-                      <td>{{ job.file_name_original }}</td>
-                      <td>{{ job.date }}</td>
-                      <td>{{ job.status }}</td>
-                      <td class="text-center">
-                        <div class="btn handle">
-                          <i class="fas fa-grip-vertical fa-2x"></i>
-                        </div>
-                      </td>
-                    </tr>
-                  </template>
-                </div>
+                    <td class="text-center">
+                      <b>
+                        {{ printer.queue ? printer.queue.findIndex(j => j === job) + 1 : '' }}
+                      </b>
+                    </td>
+                    <td><b>{{ job.name }}</b></td>
+                    <td>{{ job.file_name_original }}</td>
+                    <td>{{ job.date }}</td>
+                    <td>{{ job.status }}</td>
+                    <td class="text-center">
+                      <div class="btn handle">
+                        <i class="fas fa-grip-vertical fa-2x"></i>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
               </draggable>
             </table>
           </div>
