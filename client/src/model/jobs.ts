@@ -137,13 +137,11 @@ export function useRemoveJob() {
   }
 }
 
-export function bumpJobs() {
+export function useMoveJob(){
   return {
-    async bumpjob(job: Job, printer: Device, choice: number) {
+    async moveJob(printerid: number | undefined, arr: number[] | undefined){
       try {
-        let printerid = printer.id
-        let jobid = job.id
-        const response = await api('bumpjob', { printerid, jobid, choice })
+        const response = await api('movejob', {printerid, arr})
         if (response) {
           if (response.success == false) {
             toast.error(response.message)
@@ -151,15 +149,15 @@ export function bumpJobs() {
             toast.success(response.message)
           } else {
             console.error('Unexpected response:', response)
-            toast.error('Failed to bump job. Unexpected response.')
+            toast.error('Failed to set queue. Unexpected response.')
           }
         } else {
           console.error('Response is undefined or null')
-          toast.error('Failed to bump job. Unexpected response')
+          toast.error('Failed to set queue. Unexpected response')
         }
+        return response 
       } catch (error) {
         console.error(error)
-        toast.error('An error occurred while bumping the job')
       }
     }
   }

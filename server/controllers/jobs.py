@@ -229,6 +229,20 @@ def bumpjob():
         print(f"Unexpected error: {e}")
         return jsonify({"error": "Unexpected error occurred"}), 500
     
+@jobs_bp.route('/movejob', methods=["POST"])
+def moveJob():
+    try:
+        data = request.get_json()
+        printer_id = data['printerid']
+        arr = data['arr']
+        
+        printerobject = findPrinterObject(printer_id)
+        printerobject.queue.reorder(arr)
+        return jsonify({"success": True, "message": "Queue updated successfully."}), 200
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "Unexpected error occurred"}), 500        
+    
 @jobs_bp.route('/updatejobstatus', methods=["POST"])
 def updateJobStatus():
     try:
