@@ -192,7 +192,7 @@ const toTime = (seconds: number | undefined) => {
       </tr>
       <tr v-if="printers.length === 0">No printers available. Either register a printer <RouterLink to="/registration">
           here</RouterLink>, or restart the server.</tr>
-      <draggable v-model="printers" tag="transition-group" :animation="200" item-key="printer.id" handle=".handle"
+      <draggable v-model="printers" tag="transition-group" :animation="300" item-key="printer.id" handle=".handle"
         dragClass="hidden-ghost" v-if="printers.length > 0">
         <template #item="{ element: printer }">
           <tr :id="printer.id">
@@ -335,17 +335,13 @@ const toTime = (seconds: number | undefined) => {
 </template>
 
 <style scoped>
-.v-move {
-  transition: transform 0.5s ease-in-out;
-}
-
 .sortable-chosen {
   opacity: 0.5;
   background-color: #f2f2f2;
 }
 
 .hidden-ghost {
-  display: none;
+  visibility: hidden;
 }
 table {
   width: 100%;

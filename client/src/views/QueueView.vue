@@ -127,7 +127,7 @@ const handleDragEnd = async (evt: any) => {
                 </tr>
               </thead>
 
-              <draggable v-model="printer.queue" tag="transition-group" :animation="200" item-key="job.id"
+              <draggable v-model="printer.queue" tag="transition-group" :animation="300" item-key="job.id"
                 handle=".handle" dragClass="hidden-ghost" :onEnd="handleDragEnd"
                 v-if="printer.queue && printer.queue.length">
                 <template #item="{ element: job }">
@@ -185,17 +185,13 @@ const handleDragEnd = async (evt: any) => {
 </template>
 
 <style scoped>
-.v-move {
-  transition: transform 0.5s ease-in-out;
-}
-
 .sortable-chosen {
   opacity: 0.5;
   background-color: #f2f2f2;
 }
 
 .hidden-ghost {
-  display: none;
+  visibility: hidden;
 }
 
 table {
