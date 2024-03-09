@@ -21,10 +21,15 @@ const quantity = ref<number>(1)
 const priority = ref<number>(0)
 const name = ref<string>()
 
-// file upload
 const handleFileUpload = (event: Event) => {
-    const target = event.target as HTMLInputElement
-    file.value = target.files ? target.files[0] : undefined
+    const target = event.target as HTMLInputElement;
+    const uploadedFile = target.files ? target.files[0] : undefined;
+    if (uploadedFile && uploadedFile.name.length > 50) {
+        toast.error('The file name should not be longer than 50 characters');
+        target.value = ''
+    } else {
+        file.value = uploadedFile;
+    }
 }
 
 // validate quantity
@@ -143,7 +148,8 @@ function appendPrinter(printer: Device) {
 
                 <select required multiple>
                     <option :value="null">Auto Queue</option>
-                    <option v-for="printer in printers" :value="printer" :key="printer.id" @click="appendPrinter(printer)">
+                    <option v-for="printer in printers" :value="printer" :key="printer.id"
+                        @click="appendPrinter(printer)">
                         {{ printer.name }}
                     </option>
                 </select>
