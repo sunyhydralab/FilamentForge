@@ -73,13 +73,13 @@ const doQueueRestore = async (printer: Device) => {
         <div v-if="registered.length != 0">
             <div class="card" style="width: 18rem;" v-for="printer in registered">
                 <div class="card-body">
-                    <button @click="doHardReset(printer)">Hard Reset</button>
-                    <button @click="doQueueRestore(printer)">Restore Queue</button>
-                    <h6>Name: {{ printer.name }}</h6>
-                    <h6 class="card-subtitle mb-2 text-body-secondary">{{ printer.device }}</h6>
-                    <h6>Description: {{ printer.description }}</h6>
-                    <h6>hwid: {{ printer.hwid }}</h6>
-                    <h6>Date registered: {{ printer.date }}</h6>
+                    <button class="btn btn-danger me-2" @click="doHardReset(printer)">Hard Reset</button>
+                    <button class="btn btn-warning" @click="doQueueRestore(printer)">Restore Queue</button>
+                    <h6><strong>Name:</strong> {{ printer.name }}</h6>
+                    <h6 class="card-subtitle mb-2 text-body-secondary"><strong>Device:</strong> {{ printer.device }}</h6>
+                    <h6><strong>Description:</strong> {{ printer.description }}</h6>
+                    <h6><strong>hwid:</strong> {{ printer.hwid }}</h6>
+                    <h6><strong>Date registered:</strong> {{ printer.date }}</h6>
                 </div>
             </div>
         </div>

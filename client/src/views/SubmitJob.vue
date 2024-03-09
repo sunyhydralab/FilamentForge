@@ -44,6 +44,13 @@ const validateQuantity = () => {
     return true;
 }
 
+const onlyNumber = ($event: KeyboardEvent) => {
+    let keyCode = $event.keyCode;
+    if ((keyCode < 48 || keyCode > 57) && keyCode !== 8) { // 48-57 are the keycodes for 0-9, 8 is for backspace
+        $event.preventDefault();
+    }
+}
+
 // sends job to printer queue
 const handleSubmit = async () => {
     if (selectedPrinters.value.length == 0) {
@@ -140,49 +147,56 @@ function appendPrinter(printer: Device) {
 
 </script>
 <template>
-    <div class="container">
-        <p>Submit Job View</p>
+    <div class="container py-5">
+        <h2 class="mb-4">Submit Job View</h2>
 
-        <div class="form-container">
-            <form @submit.prevent="handleSubmit" ref="form">
+        <div class="card">
+            <div class="card-body">
+                <form @submit.prevent="handleSubmit" ref="form">
 
-                <select required multiple>
-                    <option :value="null">Auto Queue</option>
-                    <option v-for="printer in printers" :value="printer" :key="printer.id"
-                        @click="appendPrinter(printer)">
-                        {{ printer.name }}
-                    </option>
-                </select>
+                    <div class="mb-3">
+                        <label for="printer" class="form-label">Select Printer</label>
+                        <select id="printer" class="form-select" required multiple>
+                            <option :value="null">Auto Queue</option>
+                            <option v-for="printer in printers" :value="printer" :key="printer.id"
+                                @click="appendPrinter(printer)">
+                                {{ printer.name }}
+                            </option>
+                        </select>
+                    </div>
 
-                <div>
-                    Selected printer(s): <br>
-                    <p v-for="printer in selectedPrinters">
-                        <b>{{ printer.name }}</b> status: {{ printer.status }}<br>
-                    </p>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label">Selected printer(s):</label>
+                        <p v-for="printer in selectedPrinters" class="mb-1">
+                            <b>{{ printer.name }}</b> status: {{ printer.status }}
+                        </p>
+                    </div>
 
-                <br><br>
-                Upload your .gcode file
-                <!-- Decide which file types are compatible with which printer. .gcode v-if printer is compatible with .gcode, .x3g if with .x3g, etc -->
-                <input @change="handleFileUpload" type="file" id="file" name="file" accept=".gcode" required>
-                <br><br>
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Upload your .gcode file</label>
+                        <input @change="handleFileUpload" class="form-control" type="file" id="file" name="file" accept=".gcode" required>
+                    </div>
 
-                <!-- Make it so user can't insert negative quantity. Decide on upper limit. -->
-                <!-- Make load-balancing feature -->
-                <label for="name">Quantity</label>
-                <input v-model="quantity" type="number" id="quantity" name="quantity" min="0" required>
-                <br><br>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input v-model="quantity" class="form-control" type="number" id="quantity" name="quantity" min="1" required
+                               @keydown="onlyNumber($event)">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input v-model="priority" class="form-check-input" type="checkbox" id="priority" name="priority">
+                        <label class="form-check-label" for="priority">Priority job?</label>
+                    </div>
 
-                <label for="priority">Priority job?</label>
-                <input v-model="priority" type="checkbox" id="priority" name="priority">
-                <br><br>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input v-model="name" class="form-control" type="text" id="name" name="name" required>
+                    </div>
 
-                <label for="name">Name</label>
-                <input v-model="name" type="text" id="name" name="name" required>
-
-                <br><br>
-                <input type="submit" value="Add to queue(s)">
-            </form>
+                    <div class="mb-3">
+                        <input class="btn btn-primary" type="submit" value="Add to queue(s)">
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </template>
