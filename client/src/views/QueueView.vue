@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, onMounted, watchEffect } from 'vue'
 import { type Device, printers } from '../model/ports'
 import { useRerunJob, useRemoveJob, useMoveJob, type Job } from '../model/jobs';
 import { nextTick } from 'vue';
@@ -12,12 +12,15 @@ const { moveJob } = useMoveJob()
 const modalJob = ref<Job>();
 const modalPrinter = ref<Device>();
 
-onUnmounted(() => {
-  // for printer in printers, set isExpanded to false
-  printers.value.forEach(printer => {
-    printer.isExpanded = false
-  })
-})
+const filteredQueues = (): { [key: number]: any[] } => {
+  const queues: { [key: number]: any[] } = {};
+  for (const printer of printers.value) {
+    if (printer.id !== undefined) {
+      queues[printer.id] = printer.queue?.filter((job: any) => job.status !== 'printing') ?? [];
+    }
+  }
+  return queues;
+}
 
 const handleRerun = async (job: Job, printer: Device) => {
   await rerunJob(job, printer)
@@ -59,10 +62,14 @@ function statusColor(status: string | undefined) {
 }
 
 const handleDragEnd = async (evt: any) => {
-  const printerId = Number(evt.item.dataset.printerId);
-  const arr = Array.from(evt.to.children).map((child: any) => Number(child.dataset.jobId));
-  await moveJob(printerId, arr)
-};
+  // console.log(evt)
+  if(evt.newIndex!=1){
+    console.log(evt)
+    const printerId = Number(evt.item.dataset.printerId);
+    const arr = Array.from(evt.to.children).map((child: any) => Number(child.dataset.jobId));
+    await moveJob(printerId, arr)
+  }
+}
 </script>
 
 <template>
@@ -96,12 +103,13 @@ const handleDragEnd = async (evt: any) => {
         here
       </RouterLink>, or restart the server.</div>
 
-    <div v-else class="accordion" id="accordionPanelsStayOpenExample">
+    <div v-else class="accordion" id="accordionPanel">
       <div class="accordion-item" v-for="(printer, index) in printers" :key="printer.id">
         <h2 class="accordion-header" :id="'panelsStayOpen-heading' + index">
           <button class="accordion-button" type="button" data-bs-toggle="collapse"
-            :data-bs-target="'#panelsStayOpen-collapse' + index" :aria-expanded="printer.isExpanded"
-            :aria-controls="'panelsStayOpen-collapse' + index">
+            :data-bs-target="'#panelsStayOpen-collapse' + index"
+            :aria-controls="'panelsStayOpen-collapse' + index"
+            :class="{ 'collapsed': !printer.isExpanded }">
             <b>{{ printer.name }}:&nbsp;
               <span class="status-text" :style="{ color: statusColor(printer.status) }">{{
               capitalizeFirstLetter(printer.status) }}</span>
@@ -110,7 +118,8 @@ const handleDragEnd = async (evt: any) => {
         </h2>
         <div :id="'panelsStayOpen-collapse' + index" class="accordion-collapse collapse"
           :class="{ show: printer.isExpanded }" :aria-labelledby="'panelsStayOpen-heading' + index"
-          data-bs-parent="#accordionPanelsStayOpenExample">
+          data-bs-parent="#accordionPanelsStayOpenExample"
+          @show.bs.collapse="printer.isExpanded = !printer.isExpanded">
           <div class="accordion-body">
             <table>
               <thead>
@@ -123,15 +132,15 @@ const handleDragEnd = async (evt: any) => {
                   <th>File</th>
                   <th>Date Added</th>
                   <th class="col-1">Job Status</th>
-                  <th class="col-1">Move Job</th>
+                  <th style="width: 0">Move</th>
                 </tr>
               </thead>
 
-              <draggable v-model="printer.queue" tag="transition-group" :animation="300" item-key="job.id"
-                handle=".handle" dragClass="hidden-ghost" :onEnd="handleDragEnd"
-                v-if="printer.queue && printer.queue.length">
-                <template #item="{ element: job }">
-                  <tr :id="job.id.toString()" :data-printer-id="printer.id" :data-job-id="job.id">
+              <draggable v-model="filteredQueues()[printer.id!]" tag="transition-group" :animation="300" item-key="job.id"
+               handle=".handle" dragClass="hidden-ghost" :onEnd="handleDragEnd"
+              v-if="printer.queue && printer.queue.length">
+              <template #item="{ element: job }">
+                <tr v-if="job.status !== 'printing'" :id="job.id.toString()" :data-printer-id="printer.id" :data-job-id="job.id" :data-job-status="job.status">
                     <td>{{ job.id }}</td>
                     <td class="text-center">
                       <button v-if="job.status == 'inqueue'" type="button" class="btn btn-danger w-100"
@@ -169,9 +178,9 @@ const handleDragEnd = async (evt: any) => {
                     <td>{{ job.date }}</td>
                     <td>{{ job.status }}</td>
                     <td class="text-center">
-                      <div class="btn handle">
-                        <i class="fas fa-grip-vertical fa-2x"></i>
-                      </div>
+                      <button :class="{ 'btn handle': job.status !== 'printing', 'btn handle-disabled': job.status === 'printing' }" :disabled="job.status === 'printing'">
+                        <i class="fas fa-grip-vertical"></i>
+                      </button>
                     </td>
                   </tr>
                 </template>
@@ -192,6 +201,10 @@ const handleDragEnd = async (evt: any) => {
 
 .hidden-ghost {
   visibility: hidden;
+}
+
+.handle, .handle-disabled {
+  border: 0;
 }
 
 table {

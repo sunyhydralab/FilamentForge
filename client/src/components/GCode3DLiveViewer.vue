@@ -70,9 +70,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div>
         <canvas ref="canvas"></canvas>
-    </div>
 </template>
 
 <style scoped>
@@ -80,6 +78,5 @@ canvas {
     width: 100%;
     height: 100%;
     display: block;
-    border-radius: .25rem;
 }
 </style>
