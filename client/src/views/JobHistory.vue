@@ -134,6 +134,22 @@ async function submitFilter() {
     selectAllCheckbox.value = false;
 }
 
+function clearFilter() {
+    searchJob.value = '';
+    selectedPrinters.value = [];
+
+    const checkboxesToClear = document.querySelectorAll<HTMLInputElement>('.form-check-input.clearable-checkbox');
+    checkboxesToClear.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+
+    if (order.value === 'oldest') {
+        order.value = 'newest';
+    }
+
+    submitFilter();
+}
+
 const ensureOneCheckboxChecked = () => {
     if (!searchByJobName.value && !searchByFileName.value) {
         searchByJobName.value = true;
@@ -334,7 +350,7 @@ const toggleButton = () => {
                         <ul class="dropdown-menu w-100" aria-labelledby="dropdownMenuButton">
                             <li v-for="printer in printers" :key="printer.id">
                                 <div class="form-check" @click.stop>
-                                    <input class="form-check-input" type="checkbox" :value="printer"
+                                    <input class="form-check-input clearable-checkbox" type="checkbox" :value="printer"
                                         @change="appendPrinter(printer)" :id="'printer-' + printer.id">
                                     <label class="form-check-label" :for="'printer-' + printer.id">
                                         {{ printer.name }}
@@ -344,14 +360,13 @@ const toggleButton = () => {
                             <li class="dropdown-divider"></li>
                             <li>
                                 <div class="form-check" @click.stop>
-                                <input class="form-check-input" type="checkbox" id="deregistered-printers"
+                                <input class="form-check-input clearable-checkbox" type="checkbox" id="deregistered-printers"
                                     @click="selectedPrinters.push(0)">
                                 <label class="form-check-label" for="deregistered-printers">
                                     Deregistered printers
                                 </label>
                                 </div>
                             </li>
-
                         </ul>
                     </div>
                 </div>
@@ -409,6 +424,8 @@ const toggleButton = () => {
             </div>
             <div class="col-10 text-center">
                 <button @click="submitFilter" class="btn btn-primary">Submit Filter</button>
+                &nbsp; &nbsp;
+                <button @click="clearFilter" class="btn btn-danger">Clear Filter</button>
             </div>
             <div class="col-1">
                 <!-- Empty column to push the other columns to the left -->
